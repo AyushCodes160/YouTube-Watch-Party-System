@@ -1,10 +1,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+
+// Default to localhost:3001 if backend URL isn't configured
+const SERVER_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 interface User {
-  id: string;
+  _id: string;
   email?: string;
-  user_metadata?: { username?: string };
+  username?: string;
+  token?: string;
 }
 
 interface AuthContextType {
@@ -25,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage for mocked user session
+    // Check local storage for JWT user session
     const storedUser = localStorage.getItem('watch_party_user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
@@ -36,28 +39,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, username?: string) => {
-    const newUser = {
-      id: uuidv4(),
-      email,
-      user_metadata: { username: username || email.split('@')[0] }
-    };
-    localStorage.setItem('watch_party_user', JSON.stringify(newUser));
-    setUser(newUser);
-    setSession({ user: newUser });
-    return { error: null };
+    try {
+      const res = await fetch(`${SERVER_URL}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, username: username || email.split('@')[0] })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Signup failed');
+      
+      localStorage.setItem('watch_party_user', JSON.stringify(data));
+      setUser(data);
+      setSession({ user: data });
+      return { error: null };
+    } catch (error: any) {
+      return { error };
+    }
   };
 
-  const signIn = async (email: string, _password: string) => {
-    // Fake login
-    const newUser = {
-      id: uuidv4(),
-      email,
-      user_metadata: { username: email.split('@')[0] }
-    };
-    localStorage.setItem('watch_party_user', JSON.stringify(newUser));
-    setUser(newUser);
-    setSession({ user: newUser });
-    return { error: null };
+  const signIn = async (email: string, password: string) => {
+    try {
+      const res = await fetch(`${SERVER_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed');
+      
+      localStorage.setItem('watch_party_user', JSON.stringify(data));
+      setUser(data);
+      setSession({ user: data });
+      return { error: null };
+    } catch (error: any) {
+      return { error };
+    }
   };
 
   const signOut = async () => {
@@ -67,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (_email: string) => {
+    // Not implemented in backend yet, keep as mock
     return { error: null };
   };
 

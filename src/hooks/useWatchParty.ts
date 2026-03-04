@@ -23,17 +23,17 @@ export function useWatchParty(roomId: string) {
   const [room, setRoom] = useState<any>(null); // For UI compatibility
 
   // Compute my role from participants list
-  const myParticipant = participants.find(p => p.user_id === user?.id);
+  const myParticipant = participants.find(p => p.user_id === user?._id);
   const myRole = myParticipant?.role ?? null;
 
   useEffect(() => {
     if (!roomId) return;
     
-    // We use a fake user ID for anonymous users if no auth is present
-    const finalUserId = user?.id || `anon_${Math.random().toString(36).substr(2, 9)}`;
-    const finalUsername = user?.user_metadata?.username || user?.email?.split('@')[0] || 'Anonymous';
+    if (!user?.token) return;
 
-    const socket = io(SERVER_URL);
+    const socket = io(SERVER_URL, {
+      auth: { token: user.token }
+    });
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -41,7 +41,7 @@ export function useWatchParty(roomId: string) {
       // Join room via socket. We pass isHost=false since backend manages auth via creator logic over REST,
       // but for simplicity we rely on backend's state for everything. 
       // It assigns first user or creator as host.
-      socket.emit('join_room', { roomId, userId: finalUserId, username: finalUsername });
+      socket.emit('join_room', { roomId });
     });
 
     socket.on('disconnect', () => {
@@ -60,7 +60,7 @@ export function useWatchParty(roomId: string) {
     });
 
     socket.on('participant_removed', ({ targetId }) => {
-      if (targetId === finalUserId) {
+      if (targetId === user?._id) {
         window.location.href = '/dashboard';
       }
     });

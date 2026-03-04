@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/config/db.ts","./src/models/participant.ts","./src/models/room.ts","./src/models/roommanager.ts","./src/models/roommongo.ts","./src/models/user.ts"],"version":"5.8.3"}
