@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,13 +18,12 @@ export default function ResetPassword() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) {
-      toast.error(error.message);
-    } else {
+    // Mock user update
+    setTimeout(() => {
       toast.success('Password updated!');
       navigate('/dashboard');
-    }
+      setSubmitting(false);
+    }, 1000);
     setSubmitting(false);
   };
 

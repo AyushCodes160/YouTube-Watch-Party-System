@@ -1,10 +1,14 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
+
+interface User {
+  id: string;
+  email?: string;
+  user_metadata?: { username?: string };
+}
 
 interface AuthContextType {
-  session: Session | null;
+  session: any | null;
   user: User | null;
   loading: boolean;
   signUp: (email: string, password: string, username?: string) => Promise<{ error: any }>;
@@ -16,52 +20,54 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<any | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    // Check local storage for mocked user session
+    const storedUser = localStorage.getItem('watch_party_user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      setSession({ user: parsedUser });
+    }
+    setLoading(false);
   }, []);
 
   const signUp = async (email: string, password: string, username?: string) => {
-    const { error } = await supabase.auth.signUp({
+    const newUser = {
+      id: uuidv4(),
       email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { username: username || email.split('@')[0] },
-      },
-    });
-    return { error };
+      user_metadata: { username: username || email.split('@')[0] }
+    };
+    localStorage.setItem('watch_party_user', JSON.stringify(newUser));
+    setUser(newUser);
+    setSession({ user: newUser });
+    return { error: null };
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+  const signIn = async (email: string, _password: string) => {
+    // Fake login
+    const newUser = {
+      id: uuidv4(),
+      email,
+      user_metadata: { username: email.split('@')[0] }
+    };
+    localStorage.setItem('watch_party_user', JSON.stringify(newUser));
+    setUser(newUser);
+    setSession({ user: newUser });
+    return { error: null };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem('watch_party_user');
+    setUser(null);
+    setSession(null);
   };
 
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    return { error };
+  const resetPassword = async (_email: string) => {
+    return { error: null };
   };
 
   return (

@@ -1,40 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
 
+const SERVER_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+
 export function useMyRooms() {
-  const { user } = useAuth();
-
-  return useQuery({
-    queryKey: ['my-rooms', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      // Get rooms where user is host
-      const { data: hostedRooms, error: e1 } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('host_id', user.id)
-        .order('created_at', { ascending: false });
-      if (e1) throw e1;
-
-      // Get rooms where user is participant
-      const { data: participantEntries, error: e2 } = await supabase
-        .from('room_participants')
-        .select('room_id, role, rooms(*)')
-        .eq('user_id', user.id);
-      if (e2) throw e2;
-
-      const participantRooms = (participantEntries || [])
-        .filter((e) => e.rooms && !(hostedRooms || []).find((r) => r.id === e.room_id))
-        .map((e) => ({ ...e.rooms!, _role: e.role }));
-
-      return [
-        ...(hostedRooms || []).map((r) => ({ ...r, _role: 'host' as const })),
-        ...participantRooms,
-      ];
-    },
-    enabled: !!user,
-  });
+  // For this MVP, we omit listing all persistent rooms since the backend is memory-based
+  return { data: [], isLoading: false };
 }
 
 export function useCreateRoom() {
@@ -43,23 +14,27 @@ export function useCreateRoom() {
 
   return useMutation({
     mutationFn: async ({ name, videoUrl }: { name: string; videoUrl?: string }) => {
-      if (!user) throw new Error('Not authenticated');
+      // Create user id for anonymous if not logged in
+      const finalUserId = user?.id || `anon_${Math.random().toString(36).substr(2, 9)}`;
+      const finalUsername = user?.user_metadata?.username || user?.email?.split('@')[0] || 'Anonymous';
 
-      // Create room
-      const { data: room, error: roomError } = await supabase
-        .from('rooms')
-        .insert({ host_id: user.id, name, video_url: videoUrl || null })
-        .select()
-        .single();
-      if (roomError) throw roomError;
+      const response = await fetch(`${SERVER_URL}/api/rooms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hostId: finalUserId,
+          hostUsername: finalUsername,
+          name: name,
+          videoUrl: videoUrl
+        })
+      });
 
-      // Add host as participant
-      const { error: partError } = await supabase
-        .from('room_participants')
-        .insert({ room_id: room.id, user_id: user.id, role: 'host' });
-      if (partError) throw partError;
+      if (!response.ok) {
+        throw new Error('Failed to create room');
+      }
 
-      return room;
+      const data = await response.json();
+      return data.room; // returns the created room from backend
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-rooms'] });
@@ -68,30 +43,15 @@ export function useCreateRoom() {
 }
 
 export function useJoinRoom() {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (roomId: string) => {
-      if (!user) throw new Error('Not authenticated');
-
-      // Check if already a participant
-      const { data: existing } = await supabase
-        .from('room_participants')
-        .select('id')
-        .eq('room_id', roomId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existing) return existing;
-
-      const { data, error } = await supabase
-        .from('room_participants')
-        .insert({ room_id: roomId, user_id: user.id, role: 'participant' })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      const response = await fetch(`${SERVER_URL}/api/rooms/${roomId}`);
+      if (!response.ok) {
+        throw new Error('Room not found');
+      }
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-rooms'] });

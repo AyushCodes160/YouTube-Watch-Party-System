@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { io, Socket } from 'socket.io-client';
 import { useAuth } from './useAuth';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { VideoState } from '@/lib/youtube';
+
+// Default to localhost:3001 if backend URL isn't configured for now
+const SERVER_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 interface Participant {
   user_id: string;
@@ -12,237 +13,133 @@ interface Participant {
   online: boolean;
 }
 
-interface WatchPartyState {
-  room: any;
-  participants: Participant[];
-  myRole: 'host' | 'moderator' | 'participant' | null;
-  videoState: VideoState;
-  isConnected: boolean;
-}
-
 export function useWatchParty(roomId: string) {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const channelRef = useRef<RealtimeChannel | null>(null);
+  const socketRef = useRef<Socket | null>(null);
   const isSyncingRef = useRef(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [videoState, setVideoState] = useState<VideoState>({ state: 'paused', currentTime: 0 });
+  const [videoState, setVideoState] = useState<VideoState>({ state: 'paused', currentTime: 0, updatedAt: Date.now() });
   const [isConnected, setIsConnected] = useState(false);
+  const [room, setRoom] = useState<any>(null); // For UI compatibility
 
-  // Fetch room data
-  const { data: room, refetch: refetchRoom } = useQuery({
-    queryKey: ['room', roomId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('id', roomId)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!roomId,
-  });
-
-  // Fetch my role
-  const { data: myParticipant } = useQuery({
-    queryKey: ['my-role', roomId, user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data, error } = await supabase
-        .from('room_participants')
-        .select('role')
-        .eq('room_id', roomId)
-        .eq('user_id', user.id)
-        .single();
-      if (error) return null;
-      return data;
-    },
-    enabled: !!roomId && !!user,
-  });
-
+  // Compute my role from participants list
+  const myParticipant = participants.find(p => p.user_id === user?.id);
   const myRole = myParticipant?.role ?? null;
 
-  // Fetch participants from DB
-  const fetchParticipants = useCallback(async () => {
-    const { data } = await supabase
-      .from('room_participants')
-      .select('user_id, role, profiles(username)')
-      .eq('room_id', roomId);
-    if (data) {
-      setParticipants(
-        data.map((p: any) => ({
-          user_id: p.user_id,
-          username: p.profiles?.username || 'Anonymous',
-          role: p.role,
-          online: false, // Will be updated by presence
-        }))
-      );
-    }
-  }, [roomId]);
-
-  // Set up Realtime channel
   useEffect(() => {
-    if (!roomId || !user) return;
+    if (!roomId) return;
+    
+    // We use a fake user ID for anonymous users if no auth is present
+    const finalUserId = user?.id || `anon_${Math.random().toString(36).substr(2, 9)}`;
+    const finalUsername = user?.user_metadata?.username || user?.email?.split('@')[0] || 'Anonymous';
 
-    fetchParticipants();
+    const socket = io(SERVER_URL);
+    socketRef.current = socket;
 
-    // Initialize video state from room
-    if (room?.video_state) {
-      const vs = room.video_state as any;
-      setVideoState({
-        state: vs.state || 'paused',
-        currentTime: vs.currentTime || 0,
-        videoId: vs.videoId,
-        updatedAt: vs.updatedAt,
-      });
-    }
-
-    const channel = supabase.channel(`room:${roomId}`, {
-      config: { presence: { key: user.id } },
+    socket.on('connect', () => {
+      setIsConnected(true);
+      // Join room via socket. We pass isHost=false since backend manages auth via creator logic over REST,
+      // but for simplicity we rely on backend's state for everything. 
+      // It assigns first user or creator as host.
+      socket.emit('join_room', { roomId, userId: finalUserId, username: finalUsername });
     });
 
-    // Presence
-    channel.on('presence', { event: 'sync' }, () => {
-      const presenceState = channel.presenceState();
-      const onlineIds = Object.keys(presenceState);
-      setParticipants((prev) =>
-        prev.map((p) => ({ ...p, online: onlineIds.includes(p.user_id) }))
-      );
+    socket.on('disconnect', () => {
+      setIsConnected(false);
     });
 
-    channel.on('presence', { event: 'join' }, () => {
-      fetchParticipants();
+    socket.on('participants_updated', (updatedList: Participant[]) => {
+      setParticipants(updatedList);
     });
 
-    channel.on('presence', { event: 'leave' }, () => {
-      fetchParticipants();
-    });
-
-    // Broadcast events
-    channel.on('broadcast', { event: 'video_action' }, ({ payload }) => {
-      if (payload.sender_id === user.id) return;
+    socket.on('sync_state', (newState: VideoState) => {
       isSyncingRef.current = true;
-      setVideoState(payload.videoState);
-      // Reset syncing flag after a short delay
+      setVideoState(newState);
+      // Reset syncing flag after a short delay so the player doesn't bounce the event back
       setTimeout(() => { isSyncingRef.current = false; }, 500);
     });
 
-    channel.on('broadcast', { event: 'role_update' }, () => {
-      queryClient.invalidateQueries({ queryKey: ['my-role', roomId] });
-      fetchParticipants();
-    });
-
-    channel.on('broadcast', { event: 'participant_removed' }, ({ payload }) => {
-      if (payload.user_id === user.id) {
-        // I was removed
+    socket.on('participant_removed', ({ targetId }) => {
+      if (targetId === finalUserId) {
         window.location.href = '/dashboard';
-        return;
-      }
-      fetchParticipants();
-    });
-
-    channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        setIsConnected(true);
-        await channel.track({
-          user_id: user.id,
-          username: user.user_metadata?.username || user.email?.split('@')[0],
-        });
       }
     });
 
-    channelRef.current = channel;
+    socket.on('error', (err) => {
+      console.error('Socket error:', err);
+    });
 
     return () => {
-      channel.unsubscribe();
-      channelRef.current = null;
+      socket.disconnect();
+      socketRef.current = null;
       setIsConnected(false);
     };
-  }, [roomId, user, room?.video_state, fetchParticipants, queryClient]);
+  }, [roomId, user]);
 
-  // Broadcast a video action (only host/moderator should call this)
+  // Initial Rest Fetch to get Room details (like Name)
+  const refetchRoom = useCallback(async () => {
+    try {
+      const res = await fetch(`${SERVER_URL}/api/rooms/${roomId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRoom({ id: data.id, name: `Room ${data.id}`, video_url: data.videoState.videoId ? `https://youtube.com/watch?v=${data.videoState.videoId}` : undefined });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [roomId]);
+
+  useEffect(() => {
+    refetchRoom();
+  }, [refetchRoom]);
+
+  // --- ACTIONS TO SERVER ---
+
   const broadcastAction = useCallback(
     async (newState: VideoState) => {
-      if (!channelRef.current || !user) return;
-      if (myRole !== 'host' && myRole !== 'moderator') return;
-
+      if (!socketRef.current) return;
+      
+      // We don't block locally strictly since backend is authoritative, 
+      // but UI still calls this.
       setVideoState(newState);
 
-      // Broadcast to all participants
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'video_action',
-        payload: { sender_id: user.id, videoState: newState },
-      });
-
-      // Persist to DB
-      await supabase
-        .from('rooms')
-        .update({
-          video_state: newState as any,
-          video_url: newState.videoId
-            ? `https://youtube.com/watch?v=${newState.videoId}`
-            : room?.video_url,
-        })
-        .eq('id', roomId);
+      if (newState.state === 'playing') {
+        socketRef.current.emit('play', { roomId, currentTime: newState.currentTime, videoId: newState.videoId });
+      } else if (newState.state === 'paused') {
+        const timeDiff = Math.abs(newState.currentTime - videoState.currentTime);
+        if (timeDiff > 2) {
+          // It's a seek masquerading possibly, or a pure pause
+          socketRef.current.emit('seek', { roomId, currentTime: newState.currentTime, videoId: newState.videoId });
+        } else {
+          socketRef.current.emit('pause', { roomId, currentTime: newState.currentTime, videoId: newState.videoId });
+        }
+      }
+      
+      // If the Video ID changed specifically
+      if (newState.videoId && newState.videoId !== videoState.videoId) {
+         socketRef.current.emit('change_video', { roomId, videoId: newState.videoId });
+      }
     },
-    [user, myRole, roomId, room?.video_url]
+    [roomId, videoState.videoId, videoState.currentTime]
   );
 
-  // Update participant role
   const updateRole = useCallback(
     async (targetUserId: string, newRole: 'moderator' | 'participant') => {
-      if (myRole !== 'host') return;
-
-      await supabase
-        .from('room_participants')
-        .update({ role: newRole })
-        .eq('room_id', roomId)
-        .eq('user_id', targetUserId);
-
-      channelRef.current?.send({
-        type: 'broadcast',
-        event: 'role_update',
-        payload: { user_id: targetUserId, role: newRole },
-      });
-
-      fetchParticipants();
+      socketRef.current?.emit('assign_role', { roomId, targetId: targetUserId, role: newRole });
     },
-    [myRole, roomId, fetchParticipants]
+    [roomId]
   );
 
-  // Remove participant
   const removeParticipant = useCallback(
     async (targetUserId: string) => {
-      if (myRole !== 'host') return;
-
-      await supabase
-        .from('room_participants')
-        .delete()
-        .eq('room_id', roomId)
-        .eq('user_id', targetUserId);
-
-      channelRef.current?.send({
-        type: 'broadcast',
-        event: 'participant_removed',
-        payload: { user_id: targetUserId },
-      });
-
-      fetchParticipants();
+      socketRef.current?.emit('remove_participant', { roomId, targetId: targetUserId });
     },
-    [myRole, roomId, fetchParticipants]
+    [roomId]
   );
 
-  // Leave room
   const leaveRoom = useCallback(async () => {
-    if (!user) return;
-    await supabase
-      .from('room_participants')
-      .delete()
-      .eq('room_id', roomId)
-      .eq('user_id', user.id);
-  }, [user, roomId]);
+    socketRef.current?.disconnect();
+  }, []);
 
   return {
     room,
