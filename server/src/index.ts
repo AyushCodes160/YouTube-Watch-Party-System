@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config(); // Loads server/.env when run from the server/ directory
+
 import express from 'express';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
