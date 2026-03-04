@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
 
-const SERVER_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+// In production (same origin on Render), VITE_BACKEND_URL should be empty or unset.
+// In development, set VITE_BACKEND_URL=http://localhost:3001
+const SERVER_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 export function useMyRooms() {
   const { user } = useAuth();

@@ -193,7 +193,7 @@ export default function Room() {
           <ParticipantsSidebar
             participants={participants}
             myRole={myRole}
-            currentUserId={user?.id}
+            currentUserId={user?._id}
             onUpdateRole={updateRole}
             onRemoveParticipant={removeParticipant}
           />

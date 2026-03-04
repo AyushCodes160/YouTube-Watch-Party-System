@@ -13,9 +13,11 @@ import { Role } from './models/Participant';
 // Connect to MongoDB
 connectDB();
 
+const allowedOrigin = process.env.ALLOWED_ORIGIN || 'http://localhost:8080';
+
 const app = express();
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || 'http://localhost:8080',
+  origin: allowedOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
@@ -24,7 +26,7 @@ app.use(express.json());
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.ALLOWED_ORIGIN || 'http://localhost:8080',
+    origin: allowedOrigin,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -338,6 +340,21 @@ io.on('connection', (socket: Socket) => {
     }
   });
 });
+
+import path from 'path';
+
+// Serve frontend
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../../dist')));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../../', 'dist', 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send('API is running...');
+  });
+}
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {

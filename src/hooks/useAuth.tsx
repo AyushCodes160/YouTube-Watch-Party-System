@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-// Default to localhost:3001 if backend URL isn't configured
-const SERVER_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+// In production (same origin on Render), VITE_BACKEND_URL should be empty or unset.
+// In development, set VITE_BACKEND_URL=http://localhost:3001
+const SERVER_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 interface User {
   _id: string;
