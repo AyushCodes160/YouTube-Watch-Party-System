@@ -37,9 +37,6 @@ export default function Index() {
           </div>
           
           <div className="hidden items-center gap-8 text-sm font-medium text-gray-400 md:flex">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">How it works</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
           </div>
 
           <div className="flex items-center gap-4">
@@ -99,15 +96,7 @@ export default function Index() {
                   </Button>
                 </Link>
                 
-                {/* Decorative floating users pill */}
-                <div className="mt-4 sm:mt-0 flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 sm:px-4 sm:py-2 backdrop-blur-md">
-                  <div className="flex -space-x-2">
-                    <img className="h-8 w-8 rounded-full border-2 border-[#1A1A24]" src="https://i.pravatar.cc/100?img=1" alt="" />
-                    <img className="h-8 w-8 rounded-full border-2 border-[#1A1A24]" src="https://i.pravatar.cc/100?img=3" alt="" />
-                    <img className="h-8 w-8 rounded-full border-2 border-[#1A1A24]" src="https://i.pravatar.cc/100?img=5" alt="" />
-                  </div>
-                  <span className="text-xs sm:text-sm font-medium text-gray-300">Join 10k+ users</span>
-                </div>
+
               </div>
             </motion.div>
           </div>
