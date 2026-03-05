@@ -39,7 +39,6 @@ export function ParticipantsSidebar({
     return order[a.role] - order[b.role];
   });
 
-  // Can this user manage the target participant?
   const canManage = (target: Participant) => {
     if (target.user_id === currentUserId) return false;
     if (myRole === 'host' && target.role !== 'host') return true;

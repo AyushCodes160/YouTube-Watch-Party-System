@@ -23,7 +23,6 @@ export function YouTubePlayer({
   const seekDebounce = useRef<ReturnType<typeof setTimeout>>();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Track fullscreen changes
   useEffect(() => {
     const handleFSChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFSChange);
@@ -39,7 +38,6 @@ export function YouTubePlayer({
     }
   };
 
-  // Initialize player
   useEffect(() => {
     let destroyed = false;
 
@@ -61,7 +59,6 @@ export function YouTubePlayer({
         },
         events: {
           onReady: (event: any) => {
-            // Sync initial state
             if (videoState.currentTime > 0) {
               event.target.seekTo(videoState.currentTime, true);
             }
@@ -76,14 +73,10 @@ export function YouTubePlayer({
 
             switch (event.data) {
               case YT_PLAYER_STATE.PLAYING:
-                // Cancel any pending pause detection (it was a seek, not a real pause)
                 clearTimeout(seekDebounce.current);
                 onPlay(currentTime);
                 break;
               case YT_PLAYER_STATE.PAUSED:
-                // Debounce: wait 300ms then check if still paused.
-                // If user was seeking (brief pause → play), the PLAYING handler
-                // above will cancel this timeout before it fires.
                 clearTimeout(seekDebounce.current);
                 seekDebounce.current = setTimeout(() => {
                   const playerState = event.target.getPlayerState();
@@ -107,11 +100,8 @@ export function YouTubePlayer({
         playerRef.current = null;
       }
     };
-    // Only re-init on videoId changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoState.videoId]);
 
-  // Sync state changes from remote
   useEffect(() => {
     const player = playerRef.current;
     if (!player?.getPlayerState) return;
@@ -134,7 +124,6 @@ export function YouTubePlayer({
     setTimeout(() => {
       isSyncingRef.current = false;
     }, 500);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoState.state, videoState.currentTime, videoState.updatedAt]);
 
   return (

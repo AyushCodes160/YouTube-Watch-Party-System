@@ -3,8 +3,6 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from './useAuth';
 import type { VideoState } from '@/lib/youtube';
 
-// In production (same origin on Render), VITE_BACKEND_URL should be empty or unset.
-// In development, set VITE_BACKEND_URL=http://localhost:3001
 const SERVER_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 interface Participant {
@@ -21,9 +19,8 @@ export function useWatchParty(roomId: string) {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [videoState, setVideoState] = useState<VideoState>({ state: 'paused', currentTime: 0, updatedAt: Date.now() });
   const [isConnected, setIsConnected] = useState(false);
-  const [room, setRoom] = useState<any>(null); // For UI compatibility
+  const [room, setRoom] = useState<any>(null);
 
-  // Compute my role from participants list
   const myParticipant = participants.find(p => p.user_id === user?._id);
   const myRole = myParticipant?.role ?? null;
 
@@ -39,9 +36,6 @@ export function useWatchParty(roomId: string) {
 
     socket.on('connect', () => {
       setIsConnected(true);
-      // Join room via socket. We pass isHost=false since backend manages auth via creator logic over REST,
-      // but for simplicity we rely on backend's state for everything. 
-      // It assigns first user or creator as host.
       socket.emit('join_room', { roomId });
     });
 
@@ -74,7 +68,6 @@ export function useWatchParty(roomId: string) {
     };
   }, [roomId, user]);
 
-  // Initial Rest Fetch to get Room details (like Name)
   const refetchRoom = useCallback(async () => {
     if (!user?.token) return;
     
@@ -99,7 +92,6 @@ export function useWatchParty(roomId: string) {
     refetchRoom();
   }, [refetchRoom]);
 
-  // --- ACTIONS TO SERVER ---
 
   const broadcastAction = useCallback(
     async (newState: VideoState) => {
@@ -113,7 +105,6 @@ export function useWatchParty(roomId: string) {
         socketRef.current.emit('pause', { roomId, currentTime: newState.currentTime, videoId: newState.videoId });
       }
       
-      // If the Video ID changed specifically
       if (newState.videoId && newState.videoId !== videoState.videoId) {
          socketRef.current.emit('change_video', { roomId, videoId: newState.videoId });
       }

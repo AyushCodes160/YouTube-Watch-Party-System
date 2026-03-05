@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-dotenv.config(); // Loads server/.env when run from the server/ directory
+dotenv.config();
 
 import express from 'express';
 import { createServer } from 'http';
@@ -13,7 +13,6 @@ import RoomMongo from './models/RoomMongo';
 import { RoomManager } from './models/RoomManager';
 import { Role } from './models/Participant';
 
-// Connect to MongoDB
 connectDB();
 
 const allowedOrigin = process.env.ALLOWED_ORIGIN || 'http://localhost:8080';
@@ -38,7 +37,7 @@ const io = new Server(server, {
 const roomManager = new RoomManager();
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_watchparty_key_change_me';
 
-// --- AUTHENTICATION MIDDLEWARE ---
+
 const protect = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -55,9 +54,7 @@ const protect = async (req: express.Request, res: express.Response, next: expres
   }
 };
 
-// --- REST ENDPOINTS ---
 
-// Auth
 app.post('/api/auth/signup', async (req, res) => {
   const { email, password, username } = req.body;
   const userExists = await User.findOne({ email });
@@ -87,7 +84,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Rooms
+
 app.post('/api/rooms', protect, async (req, res) => {
   const { name, videoUrl } = req.body;
   const user = (req as any).user;
@@ -103,10 +100,8 @@ app.post('/api/rooms', protect, async (req, res) => {
 app.get('/api/rooms/my-rooms', protect, async (req, res) => {
   const user = (req as any).user;
   try {
-    // Rooms where user is host
     const hostedRooms = await RoomMongo.find({ hostId: user._id }).sort({ createdAt: -1 });
     
-    // Rooms where user is participant
     const participatingRooms = await RoomMongo.find({
       'participants.user': user._id,
       hostId: { $ne: user._id }
@@ -139,14 +134,12 @@ app.get('/api/rooms/my-rooms', protect, async (req, res) => {
 
 app.get('/api/rooms/:roomId', protect, async (req, res) => {
   const roomId = req.params.roomId as string;
-  // DB Load syncs memory model
   const room = await roomManager.loadRoom(roomId);
 
   if (!room) {
     return res.status(404).json({ error: 'Room not found' });
   }
   
-  // Also fetch the room metadata (like friendly Name) from Mongo
   const dbRoom = await RoomMongo.findOne({ roomId });
   
   res.json({
@@ -159,9 +152,7 @@ app.get('/api/rooms/:roomId', protect, async (req, res) => {
   });
 });
 
-// --- SOCKET.IO HANDLING ---
 
-// Middleware: Authenticate Socket connections via JWT
 io.use(async (socket, next) => {
   const token = socket.handshake.auth?.token;
   if (!token) return next(new Error('Authentication error: No token'));
@@ -184,11 +175,10 @@ io.on('connection', (socket: Socket) => {
   const username = user.username;
   console.log(`User connected: ${username} (${socket.id})`);
 
-  // Join Room
+
   socket.on('join_room', async (data: { roomId: string }) => {
     const { roomId } = data;
-    
-    // Load room into memory if it isn't, and fetch from database
+
     const room = await roomManager.loadRoom(roomId);
     
     if (!room) {
@@ -196,13 +186,11 @@ io.on('connection', (socket: Socket) => {
       return;
     }
 
-    // Determine default role (if not already in room, and if not the creator host)
     let role: Role = 'participant';
     if (room.hostId === userId) {
       role = 'host';
     }
 
-    // Join Memory Model OOP Map
     const existingParticipant = room.participants.get(userId);
     if (!existingParticipant) {
         room.addParticipant(userId, username, role);
@@ -216,12 +204,10 @@ io.on('connection', (socket: Socket) => {
         existingParticipant.username = username;
     }
 
-    // Join Socket.io channel
     socket.join(roomId);
     socket.data = { userId, roomId };
 
     io.to(roomId).emit('participants_updated', room.getParticipantList());
-    // Compute real-time position for rooms that are currently playing
     let stateToSend = { ...room.videoState };
     if (stateToSend.state === 'playing' && stateToSend.updatedAt) {
       const elapsed = (Date.now() - stateToSend.updatedAt) / 1000;
@@ -233,12 +219,11 @@ io.on('connection', (socket: Socket) => {
     console.log(`User ${username} joined room ${roomId}`);
   });
 
-  // DB Syncer wrapper
   const syncStateToDb = (roomId: string, state: any) => {
      RoomMongo.updateOne({ roomId }, { $set: { videoState: state }}).catch(e => console.error(e));
   }
 
-  // Handle Play
+
   socket.on('play', (data: { roomId: string, currentTime: number, videoId?: string }) => {
     if (!socket.data) return;
     const { userId, roomId } = socket.data;
@@ -251,7 +236,7 @@ io.on('connection', (socket: Socket) => {
     }
   });
 
-  // Handle Pause
+
   socket.on('pause', (data: { roomId: string, currentTime: number, videoId?: string }) => {
     if (!socket.data) return;
     const { userId, roomId } = socket.data;
@@ -264,7 +249,7 @@ io.on('connection', (socket: Socket) => {
     }
   });
 
-  // Handle Seek
+
   socket.on('seek', (data: { roomId: string, currentTime: number, videoId?: string }) => {
     if (!socket.data) return;
     const { userId, roomId } = socket.data;
@@ -277,7 +262,7 @@ io.on('connection', (socket: Socket) => {
     }
   });
 
-  // Handle Change Video
+
   socket.on('change_video', async (data: { roomId: string, videoId: string }) => {
     if (!socket.data) return;
     const { userId, roomId } = socket.data;
@@ -294,7 +279,7 @@ io.on('connection', (socket: Socket) => {
     }
   });
 
-  // Handle Role Assignment
+
   socket.on('assign_role', async (data: { roomId: string, targetId: string, role: Role }) => {
     if (!socket.data) return;
     const { userId, roomId } = socket.data;
@@ -312,7 +297,7 @@ io.on('connection', (socket: Socket) => {
     }
   });
 
-  // Handle Participant Removal
+
   socket.on('remove_participant', async (data: { roomId: string, targetId: string }) => {
     if (!socket.data) return;
     const { userId, roomId } = socket.data;
@@ -332,7 +317,7 @@ io.on('connection', (socket: Socket) => {
     }
   });
 
-  // Handle Host Transfer
+
   socket.on('transfer_host', async (data: { roomId: string, targetId: string }) => {
     if (!socket.data) return;
     const { userId, roomId } = socket.data;
@@ -357,19 +342,14 @@ io.on('connection', (socket: Socket) => {
     }
   });
 
-  // Handle Disconnect
+
   socket.on('disconnect', () => {
     if (socket.data && socket.data.roomId && socket.data.userId) {
       const { roomId, userId } = socket.data;
       const room = roomManager.getRoom(roomId);
       
       if (room) {
-        // Logically we don't 'remove' a participant from Memory on disconnect 
-        // to preserve their layout/identity temporarily, but we emit updated presence
-        // Here we can simply iterate the online Socket connections to see who is active
         const remainingSockets = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
-        
-        // This broadcasts an update, frontend will deduce they are offline if absent from the IO room
         io.to(roomId).emit('participants_updated', room.getParticipantList());
       }
     }
@@ -378,7 +358,6 @@ io.on('connection', (socket: Socket) => {
 
 import path from 'path';
 
-// Serve frontend
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../../dist')));
 
@@ -395,13 +374,12 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Backend Server listening on port ${PORT}`);
 
-  // Keep Render free tier alive by self-pinging every 14 minutes
   if (process.env.RENDER_EXTERNAL_URL) {
     const url = process.env.RENDER_EXTERNAL_URL;
     setInterval(() => {
       fetch(url)
         .then(() => console.log(`[keep-alive] Pinged ${url}`))
         .catch((err) => console.error('[keep-alive] Ping failed:', err.message));
-    }, 14 * 60 * 1000); // 14 minutes
+    }, 14 * 60 * 1000);
   }
 });

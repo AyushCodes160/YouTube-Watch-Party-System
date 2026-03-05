@@ -24,8 +24,6 @@ export class Room {
       updatedAt: Date.now(),
     };
     this.createdAt = new Date();
-
-    // The creator becomes the host
     this.addParticipant(hostId, hostUsername, 'host');
   }
 
@@ -48,7 +46,6 @@ export class Room {
     const target = this.participants.get(targetId);
     if (!requester || !target) return false;
 
-    // Moderators can only manage participants, not other moderators or host
     if (requester.role === 'moderator' && target.role !== 'participant') {
       return false;
     }
@@ -58,13 +55,12 @@ export class Room {
   }
 
   public transferHost(targetId: string, requesterId: string): boolean {
-    if (this.hostId !== requesterId) return false; // Only current host can transfer
+    if (this.hostId !== requesterId) return false;
 
     const requester = this.participants.get(requesterId);
     const target = this.participants.get(targetId);
     if (!requester || !target) return false;
 
-    // Demote old host → participant, promote target → host
     requester.role = 'participant';
     target.role = 'host';
     this.hostId = targetId;
@@ -79,15 +75,14 @@ export class Room {
     const adminActions = ['assign_role', 'remove_participant'];
 
     if (participant.role === 'host') {
-      return true; // Host can do everything
+      return true;
     }
 
     if (participant.role === 'moderator') {
       if (controlActions.includes(action)) return true;
-      if (adminActions.includes(action)) return true; // Moderators can manage roles/participants
+      if (adminActions.includes(action)) return true;
     }
 
-    // Regular participant can't do any of these actions
     if (participant.role === 'participant') {
       if (controlActions.includes(action) || adminActions.includes(action)) {
         return false;
