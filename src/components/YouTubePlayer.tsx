@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { loadYouTubeAPI, extractVideoId, YT_PLAYER_STATE, type VideoState } from '@/lib/youtube';
 
 interface YouTubePlayerProps {
@@ -7,7 +7,6 @@ interface YouTubePlayerProps {
   canControl: boolean;
   onPlay: (currentTime: number) => void;
   onPause: (currentTime: number) => void;
-  onSeek: (currentTime: number) => void;
 }
 
 export function YouTubePlayer({
@@ -16,12 +15,10 @@ export function YouTubePlayer({
   canControl,
   onPlay,
   onPause,
-  onSeek,
 }: YouTubePlayerProps) {
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const seekDebounce = useRef<ReturnType<typeof setTimeout>>();
-  const lastSeekTime = useRef(0);
 
   // Initialize player
   useEffect(() => {
@@ -38,6 +35,7 @@ export function YouTubePlayer({
         playerVars: {
           autoplay: 0,
           controls: canControl ? 1 : 0,
+          disablekb: canControl ? 0 : 1,
           modestbranding: 1,
           rel: 0,
           fs: 1,
@@ -59,21 +57,23 @@ export function YouTubePlayer({
 
             switch (event.data) {
               case YT_PLAYER_STATE.PLAYING:
+                // Cancel any pending pause detection (it was a seek, not a real pause)
+                clearTimeout(seekDebounce.current);
                 onPlay(currentTime);
                 break;
               case YT_PLAYER_STATE.PAUSED:
-                // Check if this is a seek (time difference > 1s from last known time)
-                if (Math.abs(currentTime - lastSeekTime.current) > 1) {
-                  clearTimeout(seekDebounce.current);
-                  seekDebounce.current = setTimeout(() => {
-                    onSeek(currentTime);
-                  }, 300);
-                } else {
-                  onPause(currentTime);
-                }
+                // Debounce: wait 300ms then check if still paused.
+                // If user was seeking (brief pause → play), the PLAYING handler
+                // above will cancel this timeout before it fires.
+                clearTimeout(seekDebounce.current);
+                seekDebounce.current = setTimeout(() => {
+                  const playerState = event.target.getPlayerState();
+                  if (playerState === YT_PLAYER_STATE.PAUSED) {
+                    onPause(event.target.getCurrentTime());
+                  }
+                }, 300);
                 break;
             }
-            lastSeekTime.current = currentTime;
           },
         },
       });
@@ -122,7 +122,7 @@ export function YouTubePlayer({
     <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border/50 bg-card">
       <div ref={containerRef} className="h-full w-full" />
       {!canControl && (
-        <div className="pointer-events-none absolute inset-0" />
+        <div className="absolute inset-0 z-10" />
       )}
     </div>
   );

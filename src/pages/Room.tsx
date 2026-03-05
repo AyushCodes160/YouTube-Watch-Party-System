@@ -68,17 +68,6 @@ export default function Room() {
     [broadcastAction, videoState.videoId]
   );
 
-  const handleSeek = useCallback(
-    (currentTime: number) => {
-      broadcastAction({
-        state: videoState.state,
-        currentTime,
-        videoId: videoState.videoId,
-        updatedAt: Date.now(),
-      });
-    },
-    [broadcastAction, videoState.state, videoState.videoId]
-  );
 
   const handleChangeVideo = () => {
     const id = extractVideoId(videoUrlInput);
@@ -172,7 +161,6 @@ export default function Room() {
             canControl={canControl}
             onPlay={handlePlay}
             onPause={handlePause}
-            onSeek={handleSeek}
           />
 
           {/* Controls - only for host/moderator */}
