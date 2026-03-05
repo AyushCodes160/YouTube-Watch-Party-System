@@ -35,6 +35,11 @@ export default function Room() {
   const deleteRoom = useDeleteRoom(); // Initialized useDeleteRoom
 
   const [videoUrlInput, setVideoUrlInput] = useState('');
+  const [lastReaction, setLastReaction] = useState<{ emoji: string; timestamp: number } | null>(null);
+
+  const handleReaction = useCallback((emoji: string) => {
+    setLastReaction({ emoji, timestamp: Date.now() });
+  }, []);
   
   const {
     room,
@@ -49,11 +54,12 @@ export default function Room() {
     removeParticipant,
     transferHost,
     sendMessage,
+    sendReaction,
     leaveRoom,
     refetchRoom,
     unreadCount,
     setUnreadCount,
-  } = useWatchParty(roomId!);
+  } = useWatchParty(roomId!, { onReaction: handleReaction });
 
   const [activeTab, setActiveTab] = useState('chat');
 
@@ -254,6 +260,8 @@ export default function Room() {
                     messages={messages}
                     currentUserId={user?._id}
                     onSendMessage={sendMessage}
+                    onSendReaction={sendReaction}
+                    lastReaction={lastReaction}
                   />
                 </div>
               </TabsContent>

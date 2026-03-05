@@ -439,6 +439,13 @@ io.on('connection', (socket: Socket) => {
   });
 
 
+  socket.on('send_reaction', (data: { roomId: string, emoji: string }) => {
+    if (!socket.data) return;
+    const { roomId } = socket.data;
+    io.to(roomId).emit('receive_reaction', { emoji: data.emoji, userId: socket.data.userId });
+  });
+
+
   socket.on('transfer_host', async (data: { roomId: string, targetId: string }) => {
     if (!socket.data) return;
     const { userId, roomId } = socket.data;

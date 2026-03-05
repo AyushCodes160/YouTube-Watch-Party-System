@@ -22,7 +22,7 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-export function useWatchParty(roomId: string) {
+export function useWatchParty(roomId: string, { onReaction }: { onReaction?: (emoji: string) => void } = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const socketRef = useRef<Socket | null>(null);
@@ -95,6 +95,10 @@ export function useWatchParty(roomId: string) {
       if (msg.userId !== user?._id) {
         setUnreadCount((prev) => prev + 1);
       }
+    });
+
+    socket.on('receive_reaction', ({ emoji }) => {
+      onReaction?.(emoji);
     });
 
     socket.on('error', (err) => {
@@ -182,6 +186,13 @@ export function useWatchParty(roomId: string) {
     [roomId]
   );
 
+  const sendReaction = useCallback(
+    (emoji: string) => {
+      socketRef.current?.emit('send_reaction', { roomId, emoji });
+    },
+    [roomId]
+  );
+
   const leaveRoom = useCallback(async () => {
     socketRef.current?.disconnect();
   }, []);
@@ -199,6 +210,7 @@ export function useWatchParty(roomId: string) {
     removeParticipant,
     transferHost,
     sendMessage,
+    sendReaction,
     leaveRoom,
     refetchRoom,
     unreadCount,
