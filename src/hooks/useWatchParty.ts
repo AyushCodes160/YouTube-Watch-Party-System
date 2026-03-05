@@ -54,10 +54,7 @@ export function useWatchParty(roomId: string) {
     });
 
     socket.on('sync_state', (newState: VideoState) => {
-      isSyncingRef.current = true;
       setVideoState(newState);
-      // Reset syncing flag after a short delay so the player doesn't bounce the event back
-      setTimeout(() => { isSyncingRef.current = false; }, 500);
     });
 
     socket.on('participant_removed', ({ targetId }) => {

@@ -221,7 +221,14 @@ io.on('connection', (socket: Socket) => {
     socket.data = { userId, roomId };
 
     io.to(roomId).emit('participants_updated', room.getParticipantList());
-    socket.emit('sync_state', room.videoState);
+    // Compute real-time position for rooms that are currently playing
+    let stateToSend = { ...room.videoState };
+    if (stateToSend.state === 'playing' && stateToSend.updatedAt) {
+      const elapsed = (Date.now() - stateToSend.updatedAt) / 1000;
+      stateToSend.currentTime += elapsed;
+      stateToSend.updatedAt = Date.now();
+    }
+    socket.emit('sync_state', stateToSend);
     
     console.log(`User ${username} joined room ${roomId}`);
   });

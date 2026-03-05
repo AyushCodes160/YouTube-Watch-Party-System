@@ -101,7 +101,7 @@ export function YouTubePlayer({
 
     if (videoState.currentTime !== undefined) {
       const currentTime = player.getCurrentTime();
-      if (Math.abs(currentTime - videoState.currentTime) > 2) {
+      if (Math.abs(currentTime - videoState.currentTime) > 1) {
         player.seekTo(videoState.currentTime, true);
       }
     }
