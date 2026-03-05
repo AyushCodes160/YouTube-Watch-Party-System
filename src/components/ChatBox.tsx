@@ -13,13 +13,10 @@ interface ChatBoxProps {
 
 export function ChatBox({ messages, currentUserId, onSendMessage }: ChatBoxProps) {
   const [text, setText] = useState('');
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new message
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -40,40 +37,43 @@ export function ChatBox({ messages, currentUserId, onSendMessage }: ChatBoxProps
         <h3 className="text-sm font-semibold">Room Chat</h3>
       </div>
       
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
           {messages.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            <div className="flex h-full items-center justify-center py-10 text-sm text-muted-foreground">
               No messages yet. Say hello!
             </div>
           ) : (
-            messages.map((msg) => {
-              const isMe = msg.userId === currentUserId;
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-1`}
-                >
-                  <div className="flex items-center gap-2 px-1">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {isMe ? 'You' : msg.username}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/60">
-                      {formatTime(msg.timestamp)}
-                    </span>
-                  </div>
+            <>
+              {messages.map((msg) => {
+                const isMe = msg.userId === currentUserId;
+                return (
                   <div
-                    className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                      isMe
-                        ? 'bg-primary text-primary-foreground rounded-br-none'
-                        : 'bg-secondary text-secondary-foreground rounded-bl-none'
-                    }`}
+                    key={msg.id}
+                    className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-1`}
                   >
-                    {msg.text}
+                    <div className="flex items-center gap-2 px-1">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {isMe ? 'You' : msg.username}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/60">
+                        {formatTime(msg.timestamp)}
+                      </span>
+                    </div>
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                        isMe
+                          ? 'bg-primary text-primary-foreground rounded-br-none'
+                          : 'bg-secondary text-secondary-foreground rounded-bl-none'
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </>
           )}
         </div>
       </ScrollArea>

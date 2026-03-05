@@ -1,12 +1,16 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Play, Users, Tv, Shield, Zap, ArrowRight } from 'lucide-react';
+import { Play, Users, Tv, Shield, Zap, ArrowRight, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ConcentricCircles } from '@/components/ConcentricCircles';
 
 export default function Index() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+  };
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#09090b]/90 text-white font-sans selection:bg-primary/30 relative">
@@ -51,11 +55,17 @@ export default function Index() {
                 </Link>
               </>
             ) : (
-               <Link to="/dashboard">
-                  <Button className="rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/20 px-6">
-                    Dashboard
-                  </Button>
-                </Link>
+              <div className="flex items-center gap-4">
+                <span className="hidden md:inline-block text-sm font-medium text-gray-300">
+                  Hello, <span className="text-white">{user.username}</span>
+                </span>
+                <Button 
+                  onClick={handleLogout}
+                  className="rounded-full bg-white/10 border border-white/20 text-white hover:bg-destructive/20 hover:text-destructive transition-colors px-6"
+                >
+                  <LogOut className="mr-2 h-4 w-4" /> Logout
+                </Button>
+              </div>
             )}
           </div>
         </nav>

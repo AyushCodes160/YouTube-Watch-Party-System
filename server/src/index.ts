@@ -221,13 +221,18 @@ io.on('connection', (socket: Socket) => {
   });
 
   socket.on('send_message', (data: { roomId: string, text: string }) => {
-    if (!socket.data) return;
+    if (!socket.data) {
+      console.log('send_message failed: No socket.data');
+      return;
+    }
     const { userId, roomId } = socket.data;
     const room = roomManager.getRoom(roomId);
     
     if (room && data.text.trim()) {
       const msg = room.addMessage(userId, username, data.text.trim());
       io.to(roomId).emit('receive_message', msg);
+    } else {
+      console.log(`send_message failed for room ${roomId}. Room exists: ${!!room}, has text: ${!!data.text}`);
     }
   });
 
