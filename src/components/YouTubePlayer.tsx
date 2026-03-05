@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadYouTubeAPI, extractVideoId, YT_PLAYER_STATE, type VideoState } from '@/lib/youtube';
-import { Maximize } from 'lucide-react';
+import { Maximize, Play } from 'lucide-react';
 
 interface YouTubePlayerProps {
   videoState: VideoState;
@@ -42,10 +42,12 @@ export function YouTubePlayer({
     let destroyed = false;
 
     async function init() {
+      if (!videoState.videoId) return;
+
       await loadYouTubeAPI();
       if (destroyed || !containerRef.current) return;
 
-      const videoId = videoState.videoId || extractVideoId('') || 'dQw4w9WgXcQ';
+      const videoId = videoState.videoId;
 
       playerRef.current = new (window as any).YT.Player(containerRef.current, {
         videoId,
@@ -104,7 +106,7 @@ export function YouTubePlayer({
 
   useEffect(() => {
     const player = playerRef.current;
-    if (!player?.getPlayerState) return;
+    if (!player?.getPlayerState || !videoState.videoId) return;
 
     isSyncingRef.current = true;
 
@@ -125,6 +127,20 @@ export function YouTubePlayer({
       isSyncingRef.current = false;
     }, 500);
   }, [videoState.state, videoState.currentTime, videoState.updatedAt]);
+
+  if (!videoState.videoId) {
+    return (
+      <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-dashed border-border/50 bg-card/30 flex flex-col items-center justify-center text-center p-6">
+        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <Play className="h-8 w-8 text-[#FF0000] fill-[#FF0000]" />
+        </div>
+        <h3 className="text-lg font-semibold mb-2">No video loaded</h3>
+        <p className="text-sm text-muted-foreground max-w-xs">
+          Paste a YouTube link in the URL bar above to start the party!
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div ref={wrapperRef} className="relative aspect-video w-full overflow-hidden rounded-xl border border-border/50 bg-card">
