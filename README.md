@@ -1,73 +1,82 @@
 # YouTube Watch Party System
 
-A clean, production-ready Watch Party system featuring real-time synchronization and authoritative Role-Based Access Control (RBAC).
+A clean, production-ready Watch Party system featuring real-time synchronization, authoritative Role-Based Access Control (RBAC), and premium animations.
 
-## Live URLs
+## Live Deployment
 
-- **Frontend**: `https://youtube-watch-party-ui.vercel.app` (Placeholder)
-- **Backend (WSS)**: `https://youtube-watch-party-api.onrender.com` (Placeholder)
+- **Full Application (Render)**: [https://youtube-watch-party-system-1e2z.onrender.com](https://youtube-watch-party-system-1e2z.onrender.com)
+
+## Key Features
+
+- **Real-time Sync**: Video playback (play/pause/seek) is synced across all participants with millisecond precision.
+- **Role-Based Access**: Specialized controls for Hosts and Moderators.
+- **Interactive Hero**: Dynamic, YouTube-themed revolving animations on the home screen.
+- **Presence Tracking**: Real-time "online" status and participant counting.
+- **Smart Notifications**: Join alerts and unread chat indicators.
+- **Google OAuth**: One-click secure login.
 
 ## Tech Stack
 
-- **Frontend**: React, TypeScript, Vite, Tailwind CSS, shadcn/ui
-- **Backend**: Node.js, Express, Socket.IO, TypeScript
-- **Video Integration**: Official YouTube IFrame Player API
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS, shadcn/ui, Framer Motion
+- **Backend**: Node.js, Express, Socket.IO, Mongoose, Passport (OAuth)
+- **Database**: MongoDB (Production) / In-memory (Dev)
 
-## Architecture Explanation
+## Setup & Local Development
 
-This system strictly separates concerns into a lightweight frontend client and an **Authoritative Backend Server**.
+### Prerequisites
 
-### The OOP Backend (Source of Truth)
+- Node.js (v18+)
+- npm or yarn
 
-The core of the server is built upon three primary classes:
-
-- \`Participant\`: Tracks a user's Socket ID, username, and role (Host, Moderator, Participant).
-- \`Room\`: The workhorse class. Maintains the centralized \`VideoState\`, a Map of participants, and **encapsulates all permission validation logic** using \`validatePermission()\`.
-- \`RoomManager\`: Orchestrates room lifecycles, assigns unique IDs, and runs garbage collection routines to delete empty rooms gracefully.
-
-### WebSocket Flow
-
-The system leverages Socket.IO to manage low-latency TCP connections:
-
-1. **Client → Server**: A user clicks Play. The frontend sends a \`play\` event payload: \`{ roomId, currentTime }\`.
-2. **Authoritative Check**: The backend intercepts this event. It calls \`room.validatePermission(userId, 'play')\`.
-3. **Server → Clients**: If the validation passes (e.g., the user is a Host/Moderator), the server updates its internal state and broadcasts a \`sync_state\` event to all sockets in the room.
-
-### Role Validation & Security
-
-The golden rule followed by this system is: **Never trust the frontend**.
-If a malicious user modifies their local React state or invokes DevTools to forge a \`play\` WebSocket emission, the Node.js backend silently ignores the request because the user's role in the server's memory (\`Participant\`) is unauthorized. State mutations strictly occur on the backend first.
-
-### YouTube State Handling Loop Prevention
-
-To prevent infinite bounce loops where incoming \`sync_state\` events trigger the local YouTube player to seek, which in turn fires a new \`onStateChange\` back to the server, the frontend uses an \`isSyncing\` flag matrix. When a WebSocket event arrives, the flag is temporarily set to \`true\`, instructing the local player event listener to ignore the immediate secondary side-effects.
-
-## Setup Instructions
-
-### 1. Build & Run the Backend
+### 1. Backend Setup
 
 ```bash
 cd server
 npm install
-npm run dev
-# Server boots on http://localhost:3001
 ```
 
-### 2. Build & Run the Frontend
+Create a `.env` file in the `server` directory:
+
+```env
+PORT=3001
+MONGODB_URI=your_mongodb_uri
+JWT_SECRET=your_jwt_secret
+GOOGLE_CLIENT_ID=your_id
+GOOGLE_CLIENT_SECRET=your_secret
+GOOGLE_CALLBACK_URL=http://localhost:3001/api/auth/google/callback
+ALLOWED_ORIGIN=http://localhost:5173
+```
+
+Run the backend:
 
 ```bash
-# In an adjacent terminal root folder
-npm install
 npm run dev
-# Frontend boots on http://localhost:8080
 ```
 
-## Deployment Steps
+### 2. Frontend Setup
 
-1. Push the \`server\` directory to **Render**, specifying \`npm run build && npm start\` as the start commands. Configure \`ALLOWED_ORIGIN\` to your production frontend URL. Secure WSS connections are handled natively out of the box.
-2. Push the root Vite directory to **Vercel** or **Render Static**, specifying \`VITE_BACKEND_URL\` as the new Render WebSocket server address.
+```bash
+# In the root directory
+npm install
+```
 
-## Trade-offs Made
+Create a `.env` file in the root directory:
 
-- **No Persistent Database (MVP Scope)**: To optimize for real-time latency and demonstrate the core Watch Party networking fundamentals, PostgreSQL was omitted. Participant histories and abandoned rooms are cleared entirely from memory in a stateless architecture. A persistent DB could easily be attached to the \`RoomManager\` for auditing.
-- **In-Memory Store Limits**: Managing rooms in the Node.js process \`Map\` prohibits horizontal scaling out of the box. To deploy across multiple Docker containers, a Redis adapter (\`@socket.io/redis-adapter\`) would be required to maintain pub/sub sync across different Node instances.
+```env
+VITE_BACKEND_URL=http://localhost:3001
+```
+
+Run the frontend:
+
+```bash
+npm run dev
+```
+
+## Deployment
+
+The application is optimized for **Render**. Use the provided `render-build.sh` for a unified deployment if deploying as a single service, or deploy the `server` and root directories independently.
+
+## Architecture & Trade-offs
+
+- **Memory vs DB**: Real-time room states (Participant lists, Video Seek positions) are kept in memory for ultra-low latency, while users and permanent room metadata are persisted in MongoDB.
+- **Stateless Socket Loop**: Each state change is validated against the server-side Participant model before broadcasting, ensuring security even if the client is compromised.

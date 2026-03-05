@@ -301,6 +301,7 @@ io.on('connection', (socket: Socket) => {
         } catch(e) {}
     } else {
         existingParticipant.username = username;
+        existingParticipant.online = true;
     }
 
     socket.join(roomId);
@@ -470,7 +471,10 @@ io.on('connection', (socket: Socket) => {
       const room = roomManager.getRoom(roomId);
       
       if (room) {
-        const remainingSockets = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+        const participant = room.participants.get(userId);
+        if (participant) {
+            participant.online = false;
+        }
         io.to(roomId).emit('participants_updated', room.getParticipantList());
       }
     }

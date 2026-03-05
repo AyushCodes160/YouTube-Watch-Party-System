@@ -1,6 +1,8 @@
 export type Role = 'host' | 'moderator' | 'participant';
 
 export class Participant {
+  public online: boolean = true;
+
   constructor(
     public id: string, // Corresponds to the Socket ID or User ID
     public username: string,
@@ -12,7 +14,7 @@ export class Participant {
       user_id: this.id,
       username: this.username,
       role: this.role,
-      online: true // In this basic memory model, if they are in the participant list, they are online.
+      online: this.online
     };
   }
 }
