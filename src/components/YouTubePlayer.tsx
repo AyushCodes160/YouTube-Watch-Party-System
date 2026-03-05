@@ -100,7 +100,7 @@ export function YouTubePlayer({
         playerRef.current = null;
       }
     };
-  }, [videoState.videoId]);
+  }, [videoState.videoId, canControl]); // Added canControl dependency
 
   useEffect(() => {
     const player = playerRef.current;
