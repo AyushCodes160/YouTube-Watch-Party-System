@@ -137,6 +137,30 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
+  .glass-card {
+    background: rgba(9, 9, 11, 0.7);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  .gradient-youtube {
+    background: linear-gradient(135deg, #FF0000 0%, #CC0000 100%);
+  }
+
+  .glow-youtube {
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.3), 0 0 40px rgba(255, 0, 0, 0.1);
+  }
+
+  .glow-youtube-hover:hover {
+    box-shadow: 0 0 30px rgba(255, 0, 0, 0.5), 0 0 60px rgba(255, 0, 0, 0.2);
+  }
+
+  .bg-grid-white\/\[0\.02\] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='white' stroke-opacity='0.02' stroke-width='1'%3E%3Cpath d='M0 .5H31.5V32'/%3E%3C/svg%3E");
+  }
+
   .circle-dashed {
     border: 1px dashed rgba(255, 255, 255, 0.15);
     border-radius: 50%;

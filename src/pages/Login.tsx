@@ -4,10 +4,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Play } from 'lucide-react';
+import { Play, ArrowRight } from 'lucide-react';
 
 export default function Login() {
   const { signIn, user, loading } = useAuth();
@@ -27,46 +27,62 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-accent/5 blur-3xl" />
+    <div className="flex min-h-screen items-center justify-center bg-[#050508] p-4 relative overflow-hidden selection:bg-[#FF0000]/30 font-sans">
+      {/* Premium Background Elements */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[center_top_-1px]" />
+        <div className="absolute -top-[10%] -left-[10%] h-[500px] w-[500px] rounded-full bg-[#FF0000]/10 blur-[120px] animate-pulse" />
+        <div className="absolute top-[20%] -right-[5%] h-[600px] w-[600px] rounded-full bg-primary/5 blur-[130px]" />
+        <div className="absolute bottom-[-10%] left-[20%] h-[400px] w-[400px] rounded-full bg-[#FF0000]/5 blur-[100px]" />
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative w-full max-w-md"
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-md"
       >
-        <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#FF0000]/20 bg-[#FF0000]/10 px-4 py-2">
-            <Play className="h-5 w-5 text-[#FF0000] fill-[#FF0000]" />
-            <span className="text-sm font-medium text-white">Watch Party</span>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
-          <p className="mt-2 text-muted-foreground">Sign in to join the party</p>
+        <div className="mb-10 text-center">
+          <motion.div 
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-[#FF0000] text-white shadow-[0_0_40px_rgba(255,0,0,0.4)]"
+          >
+            <Play className="h-10 w-10 fill-white ml-1" />
+          </motion.div>
+          
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
+            Welcome Back
+          </h1>
+          <p className="mt-3 text-lg text-gray-400 font-medium">
+            The party is waiting for you
+          </p>
         </div>
 
-        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+        <Card className="glass-card border-white/10 group overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#FF0000] to-transparent opacity-50" />
+          
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4 pt-6">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+            <CardContent className="space-y-6 pt-8">
+              <div className="space-y-2.5">
+                <Label htmlFor="email" className="text-sm font-semibold text-gray-300 ml-1">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="name@example.com"
                   required
+                  className="h-12 bg-white/5 border-white/10 focus:border-[#FF0000]/50 focus:ring-[#FF0000]/20 transition-all text-white placeholder:text-gray-500 rounded-xl"
                 />
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                    Forgot password?
+              
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between ml-1">
+                  <Label htmlFor="password" title="password" className="text-sm font-semibold text-gray-300">Password</Label>
+                  <Link to="/forgot-password" title="forgot password" className="text-xs font-semibold text-[#FF0000] hover:text-[#FF0000]/80 transition-colors uppercase tracking-wider">
+                    Forgot?
                   </Link>
                 </div>
                 <Input
@@ -76,19 +92,36 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  className="h-12 bg-white/5 border-white/10 focus:border-[#FF0000]/50 focus:ring-[#FF0000]/20 transition-all text-white placeholder:text-gray-500 rounded-xl"
                 />
               </div>
             </CardContent>
-            <CardFooter className="flex-col gap-4">
-              <Button type="submit" className="w-full gradient-primary" disabled={submitting}>
-                {submitting ? 'Signing in...' : 'Sign In'}
+
+            <CardFooter className="flex-col gap-6 pb-8 pt-2">
+              <Button 
+                type="submit" 
+                disabled={submitting}
+                className="h-14 w-full gradient-youtube text-lg font-bold rounded-xl shadow-[0_0_20px_rgba(255,0,0,0.3)] hover:shadow-[0_0_30px_rgba(255,0,0,0.5)] transition-all duration-300 group"
+              >
+                {submitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    <span>Syncing...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <span>SIGN IN</span>
+                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                )}
               </Button>
-              <p className="text-sm text-muted-foreground">
-                Don't have an account?{' '}
-                <Link to="/signup" className="text-primary hover:underline">
-                  Sign up
+
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+                <span>Not a member yet?</span>
+                <Link to="/signup" className="font-bold text-white hover:text-[#FF0000] transition-colors underline underline-offset-4 decoration-[#FF0000]/30 hover:decoration-[#FF0000]">
+                  Create account
                 </Link>
-              </p>
+              </div>
             </CardFooter>
           </form>
         </Card>
