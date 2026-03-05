@@ -7,6 +7,8 @@ import { Server, Socket } from 'socket.io';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import connectDB from './config/db';
 import User from './models/User';
 import RoomMongo from './models/RoomMongo';
@@ -36,6 +38,45 @@ const io = new Server(server, {
 
 const roomManager = new RoomManager();
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_watchparty_key_change_me';
+
+// Passport Google Strategy
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID || 'dummy_id',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'dummy_secret',
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback'
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      const email = profile.emails?.[0].value;
+      if (!email) return done(new Error('No email found in Google profile'));
+
+      let user = await User.findOne({ 
+        $or: [
+          { googleId: profile.id },
+          { email: email }
+        ]
+      });
+
+      if (!user) {
+        user = await User.create({
+          googleId: profile.id,
+          email: email,
+          username: profile.displayName || email.split('@')[0],
+        });
+      } else if (!user.googleId) {
+        // Link existing email account to Google
+        user.googleId = profile.id;
+        await user.save();
+      }
+
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }
+));
+
+app.use(passport.initialize());
 
 
 const protect = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -83,6 +124,27 @@ app.post('/api/auth/login', async (req, res) => {
     res.status(401).json({ error: 'Invalid email or password' });
   }
 });
+
+// OAuth Routes
+app.get('/api/auth/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
+
+app.get('/api/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: `${allowedOrigin}/login?error=oauth_failed`, session: false }),
+  (req, res) => {
+    const user = req.user as any;
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '30d' });
+    
+    // Redirect to frontend with token and user data in query params
+    const userData = encodeURIComponent(JSON.stringify({
+      _id: user._id,
+      email: user.email,
+      username: user.username,
+      token
+    }));
+    
+    res.redirect(`${allowedOrigin}/oauth-success?data=${userData}`);
+  }
+);
 
 
 app.post('/api/rooms', protect, async (req, res) => {

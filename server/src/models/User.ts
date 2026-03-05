@@ -10,11 +10,18 @@ const UserSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: function(this: any) {
+        return !this.googleId;
+      },
     },
     username: {
       type: String,
       required: true,
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
   },
   { timestamps: true }
