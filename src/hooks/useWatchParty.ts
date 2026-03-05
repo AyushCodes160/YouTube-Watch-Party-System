@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 import type { VideoState } from '@/lib/youtube';
 
 const SERVER_URL = import.meta.env.VITE_BACKEND_URL || '';
@@ -22,6 +24,7 @@ export interface ChatMessage {
 
 export function useWatchParty(roomId: string) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const socketRef = useRef<Socket | null>(null);
   const isSyncingRef = useRef(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -62,8 +65,14 @@ export function useWatchParty(roomId: string) {
 
     socket.on('participant_removed', ({ targetId }) => {
       if (targetId === user?._id) {
-        window.location.href = '/dashboard';
+        toast.info('You have been removed from the room');
+        navigate('/dashboard');
       }
+    });
+
+    socket.on('room_deleted', () => {
+      toast.info('The host has deleted this room');
+      navigate('/dashboard');
     });
 
     socket.on('chat_history', (history: ChatMessage[]) => {

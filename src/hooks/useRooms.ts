@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 // In production (same origin on Render), VITE_BACKEND_URL should be empty or unset.
 // In development, set VITE_BACKEND_URL=http://localhost:3001
@@ -77,6 +78,34 @@ export function useJoinRoom() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-rooms'] });
+    },
+  });
+}
+export function useDeleteRoom() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (roomId: string) => {
+      if (!user?.token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${SERVER_URL}/api/rooms/${roomId}`, {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete room');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-rooms'] });
+      toast.success('Room deleted successfully');
     },
   });
 }

@@ -152,6 +152,32 @@ app.get('/api/rooms/:roomId', protect, async (req, res) => {
   });
 });
 
+app.delete('/api/rooms/:roomId', protect, async (req, res) => {
+  const roomId = req.params.roomId as string;
+  const user = (req as any).user;
+  
+  try {
+    const roomRecord = await RoomMongo.findOne({ roomId });
+    if (!roomRecord) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+
+    if (roomRecord.hostId.toString() !== user._id.toString()) {
+      return res.status(403).json({ error: 'Only the host can delete this room' });
+    }
+
+    // Notify all participants
+    io.to(roomId).emit('room_deleted', { roomId });
+
+    // Perform deletion
+    await roomManager.deleteRoom(roomId);
+    
+    res.json({ success: true, message: 'Room deleted successfully' });
+  } catch(error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 io.use(async (socket, next) => {
   const token = socket.handshake.auth?.token;

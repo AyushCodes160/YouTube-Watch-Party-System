@@ -13,6 +13,7 @@ import {
   Video,
   MessageSquare,
   Users,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useWatchParty } from '@/hooks/useWatchParty';
+import { useDeleteRoom } from '@/hooks/useRooms'; // Added useDeleteRoom import
 import { YouTubePlayer } from '@/components/YouTubePlayer';
 import { ParticipantsSidebar } from '@/components/ParticipantsSidebar';
 import { ChatBox } from '@/components/ChatBox';
@@ -30,7 +32,10 @@ export default function Room() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const deleteRoom = useDeleteRoom(); // Initialized useDeleteRoom
 
+  const [videoUrlInput, setVideoUrlInput] = useState('');
+  
   const {
     room,
     participants,
@@ -45,9 +50,23 @@ export default function Room() {
     transferHost,
     sendMessage,
     leaveRoom,
+    socket, // Extract socket here
   } = useWatchParty(roomId!);
 
-  const [videoUrlInput, setVideoUrlInput] = useState('');
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRoomDeleted = () => {
+      toast.info('The host has deleted this room.');
+      navigate('/dashboard');
+    };
+
+    socket.on('room_deleted', handleRoomDeleted);
+    return () => {
+      socket.off('room_deleted', handleRoomDeleted);
+    };
+  }, [socket, navigate]);
+
   const canControl = myRole === 'host' || myRole === 'moderator';
 
   const handlePlay = useCallback(
@@ -100,6 +119,17 @@ export default function Room() {
     toast.success('Room ID copied!');
   };
 
+  const handleDeleteRoom = async () => {
+    if (window.confirm('Are you sure you want to delete this room for everyone?')) {
+      try {
+        await deleteRoom.mutateAsync(roomId!);
+        navigate('/dashboard');
+      } catch (err: any) {
+        toast.error(err.message);
+      }
+    }
+  };
+
   if (!room) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[#050508] text-white">
@@ -143,9 +173,15 @@ export default function Room() {
               <Button variant="outline" size="sm" onClick={handleCopyLink}>
                 <Copy className="mr-2 h-3.5 w-3.5" /> Share ID
               </Button>
-              <Button variant="ghost" size="sm" className="text-destructive" onClick={handleLeave}>
-                <LogOut className="mr-2 h-3.5 w-3.5" /> Leave
-              </Button>
+              {myRole === 'host' ? (
+                <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={handleDeleteRoom}>
+                  <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete Room
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" className="text-destructive" onClick={handleLeave}>
+                  <LogOut className="mr-2 h-3.5 w-3.5" /> Leave
+                </Button>
+              )}
             </div>
           </div>
         </header>

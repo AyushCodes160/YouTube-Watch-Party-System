@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useMyRooms, useCreateRoom, useJoinRoom } from '@/hooks/useRooms';
+import { useMyRooms, useCreateRoom, useJoinRoom, useDeleteRoom } from '@/hooks/useRooms';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,13 +10,14 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Plus, LogIn, LogOut, Play, Users, Clock, Copy } from 'lucide-react';
+import { Plus, LogIn, LogOut, Play, Users, Clock, Copy, Trash2 } from 'lucide-react';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const { data: rooms, isLoading } = useMyRooms();
   const createRoom = useCreateRoom();
   const joinRoom = useJoinRoom();
+  const deleteRoom = useDeleteRoom();
   const navigate = useNavigate();
 
   const [newRoomName, setNewRoomName] = useState('');
@@ -24,6 +25,17 @@ export default function Dashboard() {
   const [joinRoomId, setJoinRoomId] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+
+  const handleDelete = async (e: React.MouseEvent, roomId: string) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+      try {
+        await deleteRoom.mutateAsync(roomId);
+      } catch (err: any) {
+        toast.error(err.message);
+      }
+    }
+  };
 
   const handleCreate = async () => {
     if (!newRoomName.trim()) {
@@ -177,21 +189,31 @@ export default function Dashboard() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {new Date(room.created_at).toLocaleDateString()}
                         </span>
-                        <button
-                          className="flex items-center gap-1 hover:text-foreground"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(room.id);
-                            toast.success('Room ID copied!');
-                          }}
-                        >
-                          <Copy className="h-3 w-3" /> Copy ID
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            className="flex items-center gap-1 hover:text-foreground transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(room.id);
+                              toast.success('Room ID copied!');
+                            }}
+                          >
+                            <Copy className="h-3 w-3" /> Copy ID
+                          </button>
+                          {room._role === 'host' && (
+                            <button
+                              className="flex items-center gap-1 text-destructive/70 hover:text-destructive transition-colors"
+                              onClick={(e) => handleDelete(e, room.id)}
+                            >
+                              <Trash2 className="h-3 w-3" /> Delete
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
