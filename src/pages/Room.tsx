@@ -50,22 +50,7 @@ export default function Room() {
     transferHost,
     sendMessage,
     leaveRoom,
-    socket, // Extract socket here
   } = useWatchParty(roomId!);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleRoomDeleted = () => {
-      toast.info('The host has deleted this room.');
-      navigate('/dashboard');
-    };
-
-    socket.on('room_deleted', handleRoomDeleted);
-    return () => {
-      socket.off('room_deleted', handleRoomDeleted);
-    };
-  }, [socket, navigate]);
 
   const canControl = myRole === 'host' || myRole === 'moderator';
 
