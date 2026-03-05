@@ -79,16 +79,24 @@ export function useWatchParty(roomId: string) {
 
   // Initial Rest Fetch to get Room details (like Name)
   const refetchRoom = useCallback(async () => {
+    if (!user?.token) return;
+    
     try {
-      const res = await fetch(`${SERVER_URL}/api/rooms/${roomId}`);
+      const res = await fetch(`${SERVER_URL}/api/rooms/${roomId}`, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
-        setRoom({ id: data.id, name: `Room ${data.id}`, video_url: data.videoState.videoId ? `https://youtube.com/watch?v=${data.videoState.videoId}` : undefined });
+        setRoom({ id: data.id, name: `Room ${data.id}`, video_url: data.videoState?.videoId ? `https://youtube.com/watch?v=${data.videoState.videoId}` : undefined });
+      } else {
+        console.error('Failed to fetch room:', await res.text());
       }
     } catch (e) {
       console.error(e);
     }
-  }, [roomId]);
+  }, [roomId, user?.token]);
 
   useEffect(() => {
     refetchRoom();

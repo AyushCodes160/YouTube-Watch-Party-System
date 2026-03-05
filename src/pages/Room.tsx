@@ -108,15 +108,22 @@ export default function Room() {
 
   if (!room) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#050508] text-white">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
+    <div className="min-h-[100dvh] bg-[#050508] relative overflow-hidden text-white font-sans selection:bg-primary/30">
+      {/* Background Glows */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+        <div className="absolute -left-[10%] -top-[10%] h-[600px] w-[600px] rounded-full bg-accent/10 blur-[120px]" />
+        <div className="absolute top-[20%] -right-[5%] h-[700px] w-[700px] rounded-full bg-primary/10 blur-[130px]" />
+      </div>
+
+      <div className="relative z-10 flex min-h-screen flex-col">
+        {/* Header */}
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
@@ -198,6 +205,7 @@ export default function Room() {
             onRemoveParticipant={removeParticipant}
           />
         </div>
+      </div>
       </div>
     </div>
   );
