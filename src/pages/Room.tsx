@@ -50,7 +50,18 @@ export default function Room() {
     transferHost,
     sendMessage,
     leaveRoom,
+    refetchRoom,
+    unreadCount,
+    setUnreadCount,
   } = useWatchParty(roomId!);
+
+  const [activeTab, setActiveTab] = useState('chat');
+
+  useEffect(() => {
+    if (activeTab === 'chat' && unreadCount > 0) {
+      setUnreadCount(0);
+    }
+  }, [activeTab, unreadCount, setUnreadCount]);
 
   const canControl = myRole === 'host' || myRole === 'moderator';
 
@@ -197,11 +208,12 @@ export default function Room() {
                   <Input
                     value={videoUrlInput}
                     onChange={(e) => setVideoUrlInput(e.target.value)}
-                    placeholder="Paste YouTube URL to change video..."
+                    placeholder={canControl ? "Paste YouTube URL to change video..." : "Only hosts/moderators can change video"}
                     className="flex-1"
+                    disabled={!canControl}
                     onKeyDown={(e) => e.key === 'Enter' && handleChangeVideo()}
                   />
-                  <Button size="sm" onClick={handleChangeVideo} disabled={!videoUrlInput.trim()}>
+                  <Button size="sm" onClick={handleChangeVideo} disabled={!videoUrlInput.trim() || !canControl}>
                     Change Video
                   </Button>
                 </div>
@@ -210,13 +222,27 @@ export default function Room() {
           </motion.div>
 
           <div className="hidden w-80 shrink-0 flex-col md:flex overflow-hidden">
-            <Tabs defaultValue="chat" className="flex h-full flex-col">
+            <Tabs 
+              value={activeTab} 
+              onValueChange={setActiveTab} 
+              className="flex h-full flex-col"
+            >
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="chat">
+                <TabsTrigger 
+                  value="chat" 
+                  className="relative"
+                  onClick={() => setActiveTab('chat')}
+                >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Chat
+                  {unreadCount > 0 && activeTab !== 'chat' && (
+                    <span className="absolute right-1 top-1 flex h-2 w-2 rounded-full bg-[#FF0000] ring-2 ring-[#050508]" />
+                  )}
                 </TabsTrigger>
-                <TabsTrigger value="participants">
+                <TabsTrigger 
+                  value="participants"
+                  onClick={() => setActiveTab('participants')}
+                >
                   <Users className="mr-2 h-4 w-4" />
                   Participants ({participants.filter(p => p.online).length})
                 </TabsTrigger>

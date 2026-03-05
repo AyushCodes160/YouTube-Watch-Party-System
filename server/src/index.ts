@@ -306,6 +306,9 @@ io.on('connection', (socket: Socket) => {
     socket.join(roomId);
     socket.data = { userId, roomId };
 
+    // Broadcast join notification to others
+    socket.to(roomId).emit('participant_joined', { username });
+
     io.to(roomId).emit('participants_updated', room.getParticipantList());
     let stateToSend = { ...room.videoState };
     if (stateToSend.state === 'playing' && stateToSend.updatedAt) {

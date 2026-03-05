@@ -32,6 +32,7 @@ export function useWatchParty(roomId: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [room, setRoom] = useState<any>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const myParticipant = participants.find(p => p.user_id === user?._id);
   const myRole = myParticipant?.role ?? null;
@@ -57,6 +58,12 @@ export function useWatchParty(roomId: string) {
 
     socket.on('participants_updated', (updatedList: Participant[]) => {
       setParticipants(updatedList);
+    });
+
+    socket.on('participant_joined', ({ username }) => {
+      toast.info(`${username} joined the room`, {
+        position: 'bottom-right',
+      });
     });
 
     socket.on('sync_state', (newState: VideoState) => {
@@ -85,6 +92,9 @@ export function useWatchParty(roomId: string) {
 
     socket.on('receive_message', (msg: ChatMessage) => {
       setMessages((prev) => [...prev, msg]);
+      if (msg.userId !== user?._id) {
+        setUnreadCount((prev) => prev + 1);
+      }
     });
 
     socket.on('error', (err) => {
@@ -191,5 +201,7 @@ export function useWatchParty(roomId: string) {
     sendMessage,
     leaveRoom,
     refetchRoom,
+    unreadCount,
+    setUnreadCount,
   };
 }
