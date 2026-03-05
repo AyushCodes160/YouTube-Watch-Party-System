@@ -2,17 +2,17 @@
 # Build script for Render deployment
 # This builds both the frontend (Vite) and the backend (TypeScript) in one go.
 
-echo "==> Installing frontend dependencies..."
-npm install
+echo "==> Installing frontend dependencies (including devDependencies)..."
+npm install --include=dev
 
 echo "==> Building frontend (Vite)..."
-npm run build
+npx vite build
 
-echo "==> Installing backend dependencies..."
+echo "==> Installing backend dependencies (including devDependencies)..."
 cd server
-npm install
+npm install --include=dev
 
 echo "==> Building backend (TypeScript)..."
-npm run build
+npx tsc
 
 echo "==> Build complete!"
