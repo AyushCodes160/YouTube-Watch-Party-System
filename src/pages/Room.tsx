@@ -171,7 +171,7 @@ export default function Room() {
           </div>
         </header>
 
-        <div className="flex flex-1 gap-4 p-4">
+        <div className="flex flex-1 gap-4 p-4 min-h-0">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -217,8 +217,8 @@ export default function Room() {
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="chat" className="mt-2 flex-1 outline-none data-[state=inactive]:hidden min-h-0">
-                <div className="relative h-full">
+              <TabsContent value="chat" className="mt-2 flex-1 outline-none data-[state=inactive]:hidden min-h-0 h-full">
+                <div className="relative h-full min-h-0">
                   <ChatBox
                     messages={messages}
                     currentUserId={user?._id}
@@ -227,8 +227,8 @@ export default function Room() {
                 </div>
               </TabsContent>
               
-              <TabsContent value="participants" className="mt-2 flex-1 outline-none data-[state=inactive]:hidden min-h-0">
-                <div className="relative h-full">
+              <TabsContent value="participants" className="mt-2 flex-1 outline-none data-[state=inactive]:hidden min-h-0 h-full">
+                <div className="relative h-full min-h-0">
                   <ParticipantsSidebar
                     participants={participants}
                     myRole={myRole}
