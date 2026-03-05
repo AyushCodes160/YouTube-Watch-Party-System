@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Play, Users, Tv, Shield, Zap, ArrowRight, LogOut, Pause } from 'lucide-react';
+import { Play, Users, Shield, Zap, ArrowRight, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ConcentricCircles } from '@/components/ConcentricCircles';
 

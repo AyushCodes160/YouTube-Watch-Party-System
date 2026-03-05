@@ -7,7 +7,6 @@ import {
   Link as LinkIcon,
   Play,
   Pause,
-  Tv,
   Wifi,
   WifiOff,
   LogOut,

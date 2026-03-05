@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Plus, LogIn, LogOut, Tv, Users, Clock, Copy } from 'lucide-react';
+import { Plus, LogIn, LogOut, Play, Users, Clock, Copy } from 'lucide-react';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -76,8 +76,8 @@ export default function Dashboard() {
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
-              <Tv className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF0000]">
+              <Play className="h-5 w-5 text-white fill-white ml-0.5" />
             </div>
             <h1 className="text-xl font-bold tracking-tight">Watch Party</h1>
           </div>
@@ -153,7 +153,7 @@ export default function Dashboard() {
           ) : !rooms?.length ? (
             <Card className="border-dashed border-border/50">
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <Tv className="mb-4 h-12 w-12 text-muted-foreground/50" />
+                <Play className="mb-4 h-12 w-12 text-[#FF0000]/50 fill-[#FF0000]/20" />
                 <p className="text-muted-foreground">No rooms yet. Create or join one!</p>
               </CardContent>
             </Card>

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Play, Tv } from 'lucide-react';
+import { Play } from 'lucide-react';
 
 export default function Login() {
   const { signIn, user, loading } = useAuth();
@@ -40,9 +40,9 @@ export default function Login() {
         className="relative w-full max-w-md"
       >
         <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2">
-            <Tv className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium text-primary">Watch Party</span>
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#FF0000]/20 bg-[#FF0000]/10 px-4 py-2">
+            <Play className="h-5 w-5 text-[#FF0000] fill-[#FF0000]" />
+            <span className="text-sm font-medium text-white">Watch Party</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
           <p className="mt-2 text-muted-foreground">Sign in to join the party</p>
