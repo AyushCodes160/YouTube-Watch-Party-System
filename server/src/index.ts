@@ -330,6 +330,7 @@ io.on('connection', (socket: Socket) => {
     
     if (room && room.assignRole(data.targetId, data.role, userId)) {
       io.to(roomId).emit('participants_updated', room.getParticipantList());
+      io.to(roomId).emit('room_updated', { id: roomId }); // Notify all to refetch if needed
       
       try {
          await RoomMongo.updateOne(
@@ -368,7 +369,8 @@ io.on('connection', (socket: Socket) => {
 
     if (room && room.transferHost(data.targetId, userId)) {
       io.to(roomId).emit('participants_updated', room.getParticipantList());
-
+      io.to(roomId).emit('room_updated', { id: roomId }); // Notify all to refetch room details
+      
       try {
         await RoomMongo.updateOne({ roomId }, {
           $set: { hostId: data.targetId }

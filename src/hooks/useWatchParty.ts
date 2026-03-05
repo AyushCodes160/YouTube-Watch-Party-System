@@ -75,6 +75,10 @@ export function useWatchParty(roomId: string) {
       navigate('/dashboard');
     });
 
+    socket.on('room_updated', () => {
+      refetchRoom();
+    });
+
     socket.on('chat_history', (history: ChatMessage[]) => {
       setMessages(history);
     });
