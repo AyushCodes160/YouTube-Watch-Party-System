@@ -34,7 +34,7 @@ export function YouTubePlayer({
         videoId,
         playerVars: {
           autoplay: 0,
-          controls: canControl ? 1 : 0,
+          controls: 1,
           disablekb: canControl ? 0 : 1,
           modestbranding: 1,
           rel: 0,
@@ -51,9 +51,21 @@ export function YouTubePlayer({
             }
           },
           onStateChange: (event: any) => {
-            if (isSyncingRef.current || !canControl) return;
+            if (isSyncingRef.current) return;
 
             const currentTime = event.target.getCurrentTime();
+
+            // If user can't control, revert any play/pause changes
+            if (!canControl) {
+              isSyncingRef.current = true;
+              if (videoState.state === 'playing' && event.data === YT_PLAYER_STATE.PAUSED) {
+                event.target.playVideo();
+              } else if (videoState.state === 'paused' && event.data === YT_PLAYER_STATE.PLAYING) {
+                event.target.pauseVideo();
+              }
+              setTimeout(() => { isSyncingRef.current = false; }, 500);
+              return;
+            }
 
             switch (event.data) {
               case YT_PLAYER_STATE.PLAYING:
@@ -121,9 +133,6 @@ export function YouTubePlayer({
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border/50 bg-card">
       <div ref={containerRef} className="h-full w-full" />
-      {!canControl && (
-        <div className="absolute inset-0 z-10" />
-      )}
     </div>
   );
 }

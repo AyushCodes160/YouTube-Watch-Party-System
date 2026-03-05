@@ -105,20 +105,12 @@ export function useWatchParty(roomId: string) {
     async (newState: VideoState) => {
       if (!socketRef.current) return;
       
-      // We don't block locally strictly since backend is authoritative, 
-      // but UI still calls this.
       setVideoState(newState);
 
       if (newState.state === 'playing') {
         socketRef.current.emit('play', { roomId, currentTime: newState.currentTime, videoId: newState.videoId });
       } else if (newState.state === 'paused') {
-        const timeDiff = Math.abs(newState.currentTime - videoState.currentTime);
-        if (timeDiff > 2) {
-          // It's a seek masquerading possibly, or a pure pause
-          socketRef.current.emit('seek', { roomId, currentTime: newState.currentTime, videoId: newState.videoId });
-        } else {
-          socketRef.current.emit('pause', { roomId, currentTime: newState.currentTime, videoId: newState.videoId });
-        }
+        socketRef.current.emit('pause', { roomId, currentTime: newState.currentTime, videoId: newState.videoId });
       }
       
       // If the Video ID changed specifically
@@ -126,7 +118,7 @@ export function useWatchParty(roomId: string) {
          socketRef.current.emit('change_video', { roomId, videoId: newState.videoId });
       }
     },
-    [roomId, videoState.videoId, videoState.currentTime]
+    [roomId, videoState.videoId]
   );
 
   const updateRole = useCallback(
