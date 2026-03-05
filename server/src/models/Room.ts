@@ -7,11 +7,20 @@ export interface VideoState {
   updatedAt: number;
 }
 
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  username: string;
+  text: string;
+  timestamp: number;
+}
+
 export class Room {
   public id: string;
   public hostId: string;
   public participants: Map<string, Participant>;
   public videoState: VideoState;
+  public messages: ChatMessage[];
   public createdAt: Date;
 
   constructor(id: string, hostId: string, hostUsername: string) {
@@ -23,6 +32,7 @@ export class Room {
       currentTime: 0,
       updatedAt: Date.now(),
     };
+    this.messages = [];
     this.createdAt = new Date();
     this.addParticipant(hostId, hostUsername, 'host');
   }
@@ -98,6 +108,23 @@ export class Room {
       ...newState,
       updatedAt: Date.now(),
     };
+  }
+
+  public addMessage(userId: string, username: string, text: string): ChatMessage {
+    const msg: ChatMessage = {
+      id: Math.random().toString(36).substring(2, 9),
+      userId,
+      username,
+      text,
+      timestamp: Date.now(),
+    };
+
+    this.messages.push(msg);
+    // Keep only last 100 messages in memory to prevent unbounded growth
+    if (this.messages.length > 100) {
+      this.messages.shift();
+    }
+    return msg;
   }
 
   public getParticipantList() {

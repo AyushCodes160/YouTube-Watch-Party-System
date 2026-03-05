@@ -215,8 +215,20 @@ io.on('connection', (socket: Socket) => {
       stateToSend.updatedAt = Date.now();
     }
     socket.emit('sync_state', stateToSend);
+    socket.emit('chat_history', room.messages);
     
     console.log(`User ${username} joined room ${roomId}`);
+  });
+
+  socket.on('send_message', (data: { roomId: string, text: string }) => {
+    if (!socket.data) return;
+    const { userId, roomId } = socket.data;
+    const room = roomManager.getRoom(roomId);
+    
+    if (room && data.text.trim()) {
+      const msg = room.addMessage(userId, username, data.text.trim());
+      io.to(roomId).emit('receive_message', msg);
+    }
   });
 
   const syncStateToDb = (roomId: string, state: any) => {

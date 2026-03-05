@@ -12,12 +12,21 @@ interface Participant {
   online: boolean;
 }
 
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  username: string;
+  text: string;
+  timestamp: number;
+}
+
 export function useWatchParty(roomId: string) {
   const { user } = useAuth();
   const socketRef = useRef<Socket | null>(null);
   const isSyncingRef = useRef(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [videoState, setVideoState] = useState<VideoState>({ state: 'paused', currentTime: 0, updatedAt: Date.now() });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [room, setRoom] = useState<any>(null);
 
@@ -55,6 +64,14 @@ export function useWatchParty(roomId: string) {
       if (targetId === user?._id) {
         window.location.href = '/dashboard';
       }
+    });
+
+    socket.on('chat_history', (history: ChatMessage[]) => {
+      setMessages(history);
+    });
+
+    socket.on('receive_message', (msg: ChatMessage) => {
+      setMessages((prev) => [...prev, msg]);
     });
 
     socket.on('error', (err) => {
@@ -133,6 +150,15 @@ export function useWatchParty(roomId: string) {
     [roomId]
   );
 
+  const sendMessage = useCallback(
+    (text: string) => {
+      if (text.trim()) {
+        socketRef.current?.emit('send_message', { roomId, text });
+      }
+    },
+    [roomId]
+  );
+
   const leaveRoom = useCallback(async () => {
     socketRef.current?.disconnect();
   }, []);
@@ -140,6 +166,7 @@ export function useWatchParty(roomId: string) {
   return {
     room,
     participants,
+    messages,
     myRole,
     videoState,
     isConnected,
@@ -148,6 +175,7 @@ export function useWatchParty(roomId: string) {
     updateRole,
     removeParticipant,
     transferHost,
+    sendMessage,
     leaveRoom,
     refetchRoom,
   };
