@@ -21,7 +21,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const [newRoomName, setNewRoomName] = useState('');
-  const [newRoomVideo, setNewRoomVideo] = useState('');
   const [joinRoomId, setJoinRoomId] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
@@ -43,10 +42,9 @@ export default function Dashboard() {
       return;
     }
     try {
-      const room = await createRoom.mutateAsync({ name: newRoomName.trim(), videoUrl: newRoomVideo.trim() || undefined });
+      const room = await createRoom.mutateAsync({ name: newRoomName.trim() });
       setCreateOpen(false);
       setNewRoomName('');
-      setNewRoomVideo('');
       navigate(`/room/${room.id}`);
     } catch (err: any) {
       toast.error(err.message);
@@ -129,10 +127,6 @@ export default function Dashboard() {
                   <div className="space-y-2">
                     <Label>Room Name</Label>
                     <Input value={newRoomName} onChange={(e) => setNewRoomName(e.target.value)} placeholder="Movie Night 🍿" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>YouTube URL (optional)</Label>
-                    <Input value={newRoomVideo} onChange={(e) => setNewRoomVideo(e.target.value)} placeholder="https://youtube.com/watch?v=..." />
                   </div>
                   <Button onClick={handleCreate} className="w-full" disabled={createRoom.isPending}>
                     {createRoom.isPending ? 'Creating...' : 'Create & Join'}
