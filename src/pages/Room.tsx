@@ -137,9 +137,14 @@ export default function Room() {
               <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <div className="flex items-center gap-2">
-                <Play className="h-4 w-4 text-[#FF0000] fill-[#FF0000]" />
-                <h1 className="text-lg font-semibold">{room.name}</h1>
+              <div 
+                className="flex items-center gap-2 cursor-pointer group"
+                onClick={() => navigate('/')}
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#FF0000] group-hover:scale-105 transition-transform">
+                  <Play className="h-4 w-4 text-white fill-white ml-0.5" />
+                </div>
+                <h1 className="text-lg font-bold tracking-tight hidden sm:block">Watch Party</h1>
               </div>
               <Badge variant={isConnected ? 'default' : 'destructive'} className="text-xs">
                 {isConnected ? (

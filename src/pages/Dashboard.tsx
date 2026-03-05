@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Plus, LogIn, LogOut, Play, Users, Clock, Copy, Trash2 } from 'lucide-react';
+import { Plus, LogIn, LogOut, Play, Users, Clock, Copy, Trash2, ArrowLeft } from 'lucide-react';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -87,11 +87,19 @@ export default function Dashboard() {
         {/* Header */}
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF0000]">
-              <Play className="h-5 w-5 text-white fill-white ml-0.5" />
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="hover:bg-white/5">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div 
+              className="flex items-center gap-3 cursor-pointer group"
+              onClick={() => navigate('/')}
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF0000] group-hover:scale-110 transition-transform">
+                <Play className="h-5 w-5 text-white fill-white ml-0.5" />
+              </div>
+              <h1 className="text-xl font-bold tracking-tight">Watch Party</h1>
             </div>
-            <h1 className="text-xl font-bold tracking-tight">Watch Party</h1>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">{user?.email}</span>
