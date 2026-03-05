@@ -171,11 +171,11 @@ export default function Room() {
           </div>
         </header>
 
-        <div className="flex flex-1 gap-4 p-4 min-h-0">
+        <div className="flex flex-1 gap-4 p-4 min-h-0 overflow-hidden">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-1 flex-col gap-4"
+            className="flex flex-1 flex-col gap-4 min-h-0 overflow-hidden"
           >
             <YouTubePlayer
               videoState={videoState}
@@ -204,7 +204,7 @@ export default function Room() {
             )}
           </motion.div>
 
-          <div className="hidden w-80 shrink-0 flex-col md:flex">
+          <div className="hidden w-80 shrink-0 flex-col md:flex overflow-hidden">
             <Tabs defaultValue="chat" className="flex h-full flex-col">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="chat">
