@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { loadYouTubeAPI, extractVideoId, YT_PLAYER_STATE, type VideoState } from '@/lib/youtube';
+import { Maximize } from 'lucide-react';
 
 interface YouTubePlayerProps {
   videoState: VideoState;
@@ -18,7 +19,25 @@ export function YouTubePlayer({
 }: YouTubePlayerProps) {
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const seekDebounce = useRef<ReturnType<typeof setTimeout>>();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Track fullscreen changes
+  useEffect(() => {
+    const handleFSChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handleFSChange);
+    return () => document.removeEventListener('fullscreenchange', handleFSChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!wrapperRef.current) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      wrapperRef.current.requestFullscreen();
+    }
+  };
 
   // Initialize player
   useEffect(() => {
@@ -34,7 +53,7 @@ export function YouTubePlayer({
         videoId,
         playerVars: {
           autoplay: 0,
-          controls: 1,
+          controls: canControl ? 1 : 0,
           disablekb: canControl ? 0 : 1,
           modestbranding: 1,
           rel: 0,
@@ -51,21 +70,9 @@ export function YouTubePlayer({
             }
           },
           onStateChange: (event: any) => {
-            if (isSyncingRef.current) return;
+            if (isSyncingRef.current || !canControl) return;
 
             const currentTime = event.target.getCurrentTime();
-
-            // If user can't control, revert any play/pause changes
-            if (!canControl) {
-              isSyncingRef.current = true;
-              if (videoState.state === 'playing' && event.data === YT_PLAYER_STATE.PAUSED) {
-                event.target.playVideo();
-              } else if (videoState.state === 'paused' && event.data === YT_PLAYER_STATE.PLAYING) {
-                event.target.pauseVideo();
-              }
-              setTimeout(() => { isSyncingRef.current = false; }, 500);
-              return;
-            }
 
             switch (event.data) {
               case YT_PLAYER_STATE.PLAYING:
@@ -131,8 +138,20 @@ export function YouTubePlayer({
   }, [videoState.state, videoState.currentTime, videoState.updatedAt]);
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border/50 bg-card">
+    <div ref={wrapperRef} className="relative aspect-video w-full overflow-hidden rounded-xl border border-border/50 bg-card">
       <div ref={containerRef} className="h-full w-full" />
+      {!canControl && (
+        <>
+          <div className="absolute inset-0 z-10" />
+          <button
+            onClick={toggleFullscreen}
+            className="absolute bottom-3 right-3 z-20 rounded-md bg-black/70 p-2 text-white transition-colors hover:bg-black/90"
+            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          >
+            <Maximize className="h-4 w-4" />
+          </button>
+        </>
+      )}
     </div>
   );
 }
