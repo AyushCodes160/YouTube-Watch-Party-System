@@ -217,6 +217,7 @@ app.get('/api/rooms/:roomId', protect, async (req, res) => {
 app.delete('/api/rooms/:roomId', protect, async (req, res) => {
   const roomId = req.params.roomId as string;
   const user = (req as any).user;
+  const userId = user._id.toString();
   
   try {
     const roomRecord = await RoomMongo.findOne({ roomId });
@@ -224,17 +225,27 @@ app.delete('/api/rooms/:roomId', protect, async (req, res) => {
       return res.status(404).json({ error: 'Room not found' });
     }
 
-    if (roomRecord.hostId.toString() !== user._id.toString()) {
-      return res.status(403).json({ error: 'Only the host can delete this room' });
+    if (roomRecord.hostId.toString() === userId) {
+      // Host: Perform full deletion
+      io.to(roomId).emit('room_deleted', { roomId });
+      await roomManager.deleteRoom(roomId);
+      return res.json({ success: true, message: 'Room deleted successfully' });
+    } else {
+      // Participant: Just leave/remove from history
+      await RoomMongo.updateOne(
+        { roomId },
+        { $pull: { participants: { user: userId } } }
+      );
+
+      // If room is in memory, remove from there too
+      const room = roomManager.getRoom(roomId);
+      if (room) {
+        room.removeParticipant(userId);
+        io.to(roomId).emit('participants_updated', room.getParticipantList());
+      }
+
+      return res.json({ success: true, message: 'Room removed from history' });
     }
-
-    // Notify all participants
-    io.to(roomId).emit('room_deleted', { roomId });
-
-    // Perform deletion
-    await roomManager.deleteRoom(roomId);
-    
-    res.json({ success: true, message: 'Room deleted successfully' });
   } catch(error: any) {
     res.status(500).json({ error: error.message });
   }

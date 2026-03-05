@@ -194,23 +194,29 @@ export default function Dashboard() {
                           <Clock className="h-3 w-3" />
                           {new Date(room.created_at).toLocaleDateString()}
                         </span>
-                        <div className="flex items-center gap-3">
-                          <button
-                            className="flex items-center gap-1 hover:text-foreground transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator.clipboard.writeText(room.id);
-                              toast.success('Room ID copied!');
-                            }}
-                          >
-                            <Copy className="h-3 w-3" /> Copy ID
-                          </button>
-                          {room._role === 'host' && (
+                          {room._role === 'host' ? (
                             <button
                               className="flex items-center gap-1 text-destructive/70 hover:text-destructive transition-colors"
-                              onClick={(e) => handleDelete(e, room.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('Delete this room for everyone? This cannot be undone.')) {
+                                  deleteRoom.mutate(room.id);
+                                }
+                              }}
                             >
                               <Trash2 className="h-3 w-3" /> Delete
+                            </button>
+                          ) : (
+                            <button
+                              className="flex items-center gap-1 text-muted-foreground hover:text-destructive transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('Remove this room from your history? You can rejoin if you have the ID.')) {
+                                  deleteRoom.mutate(room.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" /> Remove
                             </button>
                           )}
                         </div>
