@@ -227,15 +227,17 @@ export default function Room() {
                 </div>
               </TabsContent>
               
-              <TabsContent value="participants" className="mt-2 flex-1 outline-none data-[state=inactive]:hidden">
-                <ParticipantsSidebar
-                  participants={participants}
-                  myRole={myRole}
-                  currentUserId={user?._id}
-                  onUpdateRole={updateRole}
-                  onRemoveParticipant={removeParticipant}
-                  onTransferHost={transferHost}
-                />
+              <TabsContent value="participants" className="mt-2 flex-1 outline-none data-[state=inactive]:hidden min-h-0">
+                <div className="relative h-full">
+                  <ParticipantsSidebar
+                    participants={participants}
+                    myRole={myRole}
+                    currentUserId={user?._id}
+                    onUpdateRole={updateRole}
+                    onRemoveParticipant={removeParticipant}
+                    onTransferHost={transferHost}
+                  />
+                </div>
               </TabsContent>
             </Tabs>
           </div>
