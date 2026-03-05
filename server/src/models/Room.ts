@@ -44,12 +44,31 @@ export class Room {
       return false;
     }
 
-    const participant = this.participants.get(targetId);
-    if (participant) {
-      participant.role = newRole;
-      return true;
+    const requester = this.participants.get(requesterId);
+    const target = this.participants.get(targetId);
+    if (!requester || !target) return false;
+
+    // Moderators can only manage participants, not other moderators or host
+    if (requester.role === 'moderator' && target.role !== 'participant') {
+      return false;
     }
-    return false;
+
+    target.role = newRole;
+    return true;
+  }
+
+  public transferHost(targetId: string, requesterId: string): boolean {
+    if (this.hostId !== requesterId) return false; // Only current host can transfer
+
+    const requester = this.participants.get(requesterId);
+    const target = this.participants.get(targetId);
+    if (!requester || !target) return false;
+
+    // Demote old host → participant, promote target → host
+    requester.role = 'participant';
+    target.role = 'host';
+    this.hostId = targetId;
+    return true;
   }
 
   public validatePermission(userId: string, action: string): boolean {
@@ -65,7 +84,7 @@ export class Room {
 
     if (participant.role === 'moderator') {
       if (controlActions.includes(action)) return true;
-      if (adminActions.includes(action)) return false;
+      if (adminActions.includes(action)) return true; // Moderators can manage roles/participants
     }
 
     // Regular participant can't do any of these actions

@@ -1,8 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Crown, Shield, User, MoreVertical, UserMinus, ChevronUp, ChevronDown, Wifi, WifiOff } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Crown, Shield, User, MoreVertical, UserMinus, ChevronUp, ChevronDown, ArrowRightLeft } from 'lucide-react';
 
 interface Participant {
   user_id: string;
@@ -17,6 +17,7 @@ interface ParticipantsSidebarProps {
   currentUserId: string | undefined;
   onUpdateRole: (userId: string, role: 'moderator' | 'participant') => void;
   onRemoveParticipant: (userId: string) => void;
+  onTransferHost: (userId: string) => void;
 }
 
 const roleIcon = (role: string) => {
@@ -25,23 +26,26 @@ const roleIcon = (role: string) => {
   return <User className="h-3.5 w-3.5 text-muted-foreground" />;
 };
 
-const roleBadge = (role: string) => {
-  if (role === 'host') return 'default';
-  if (role === 'moderator') return 'secondary';
-  return 'outline';
-};
-
 export function ParticipantsSidebar({
   participants,
   myRole,
   currentUserId,
   onUpdateRole,
   onRemoveParticipant,
+  onTransferHost,
 }: ParticipantsSidebarProps) {
   const sorted = [...participants].sort((a, b) => {
     const order = { host: 0, moderator: 1, participant: 2 };
     return order[a.role] - order[b.role];
   });
+
+  // Can this user manage the target participant?
+  const canManage = (target: Participant) => {
+    if (target.user_id === currentUserId) return false;
+    if (myRole === 'host' && target.role !== 'host') return true;
+    if (myRole === 'moderator' && target.role === 'participant') return true;
+    return false;
+  };
 
   return (
     <div className="flex h-full flex-col rounded-xl border border-border/50 bg-card">
@@ -83,7 +87,7 @@ export function ParticipantsSidebar({
                 </div>
               </div>
 
-              {myRole === 'host' && p.user_id !== currentUserId && p.role !== 'host' && (
+              {canManage(p) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -91,15 +95,25 @@ export function ParticipantsSidebar({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {p.role === 'participant' ? (
+                    {p.role === 'participant' && (
                       <DropdownMenuItem onClick={() => onUpdateRole(p.user_id, 'moderator')}>
                         <ChevronUp className="mr-2 h-4 w-4" /> Promote to Moderator
                       </DropdownMenuItem>
-                    ) : (
+                    )}
+                    {p.role === 'moderator' && (
                       <DropdownMenuItem onClick={() => onUpdateRole(p.user_id, 'participant')}>
                         <ChevronDown className="mr-2 h-4 w-4" /> Demote to Participant
                       </DropdownMenuItem>
                     )}
+                    {myRole === 'host' && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onTransferHost(p.user_id)}>
+                          <ArrowRightLeft className="mr-2 h-4 w-4" /> Transfer Host
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-destructive" onClick={() => onRemoveParticipant(p.user_id)}>
                       <UserMinus className="mr-2 h-4 w-4" /> Remove
                     </DropdownMenuItem>

@@ -135,6 +135,13 @@ export function useWatchParty(roomId: string) {
     [roomId]
   );
 
+  const transferHost = useCallback(
+    async (targetUserId: string) => {
+      socketRef.current?.emit('transfer_host', { roomId, targetId: targetUserId });
+    },
+    [roomId]
+  );
+
   const leaveRoom = useCallback(async () => {
     socketRef.current?.disconnect();
   }, []);
@@ -149,6 +156,7 @@ export function useWatchParty(roomId: string) {
     broadcastAction,
     updateRole,
     removeParticipant,
+    transferHost,
     leaveRoom,
     refetchRoom,
   };

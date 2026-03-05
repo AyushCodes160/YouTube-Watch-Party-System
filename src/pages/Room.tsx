@@ -38,6 +38,7 @@ export default function Room() {
     broadcastAction,
     updateRole,
     removeParticipant,
+    transferHost,
     leaveRoom,
   } = useWatchParty(roomId!);
 
@@ -191,6 +192,7 @@ export default function Room() {
             currentUserId={user?._id}
             onUpdateRole={updateRole}
             onRemoveParticipant={removeParticipant}
+            onTransferHost={transferHost}
           />
         </div>
       </div>

@@ -332,6 +332,31 @@ io.on('connection', (socket: Socket) => {
     }
   });
 
+  // Handle Host Transfer
+  socket.on('transfer_host', async (data: { roomId: string, targetId: string }) => {
+    if (!socket.data) return;
+    const { userId, roomId } = socket.data;
+    const room = roomManager.getRoom(roomId);
+
+    if (room && room.transferHost(data.targetId, userId)) {
+      io.to(roomId).emit('participants_updated', room.getParticipantList());
+
+      try {
+        await RoomMongo.updateOne({ roomId }, {
+          $set: { hostId: data.targetId }
+        });
+        await RoomMongo.updateOne(
+          { roomId, 'participants.user': data.targetId },
+          { $set: { 'participants.$.role': 'host' } }
+        );
+        await RoomMongo.updateOne(
+          { roomId, 'participants.user': userId },
+          { $set: { 'participants.$.role': 'participant' } }
+        );
+      } catch(e) {}
+    }
+  });
+
   // Handle Disconnect
   socket.on('disconnect', () => {
     if (socket.data && socket.data.roomId && socket.data.userId) {
