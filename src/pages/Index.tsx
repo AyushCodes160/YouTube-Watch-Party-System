@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Play, Users, Tv, Shield, Zap, ArrowRight, LogOut } from 'lucide-react';
+import { Play, Users, Tv, Shield, Zap, ArrowRight, LogOut, Pause } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ConcentricCircles } from '@/components/ConcentricCircles';
 
@@ -30,8 +30,8 @@ export default function Index() {
         {/* Navbar */}
         <nav className="flex shrink-0 items-center justify-between rounded-full border border-white/5 bg-white/5 px-6 py-3 backdrop-blur-md">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
-               <Tv className="h-5 w-5" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FF0000] text-white">
+               <Play className="h-5 w-5 fill-white" />
             </div>
             <span className="text-xl font-bold tracking-tight">WatchParty</span>
           </div>

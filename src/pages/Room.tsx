@@ -124,7 +124,7 @@ export default function Room() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div className="flex items-center gap-2">
-                <Tv className="h-4 w-4 text-primary" />
+                <Play className="h-4 w-4 text-[#FF0000] fill-[#FF0000]" />
                 <h1 className="text-lg font-semibold">{room.name}</h1>
               </div>
               <Badge variant={isConnected ? 'default' : 'destructive'} className="text-xs">
