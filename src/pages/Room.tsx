@@ -218,7 +218,7 @@ export default function Room() {
                 </TabsTrigger>
                 <TabsTrigger value="participants">
                   <Users className="mr-2 h-4 w-4" />
-                  Duo ({participants.filter(p => p.online).length})
+                  Participants ({participants.filter(p => p.online).length})
                 </TabsTrigger>
               </TabsList>
               
