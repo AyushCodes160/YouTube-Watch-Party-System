@@ -194,6 +194,17 @@ export default function Dashboard() {
                           <Clock className="h-3 w-3" />
                           {new Date(room.created_at).toLocaleDateString()}
                         </span>
+                        <div className="flex items-center gap-3">
+                          <button
+                            className="flex items-center gap-1 hover:text-foreground transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(room.id);
+                              toast.success('Room ID copied!');
+                            }}
+                          >
+                            <Copy className="h-3 w-3" /> Copy ID
+                          </button>
                           {room._role === 'host' ? (
                             <button
                               className="flex items-center gap-1 text-destructive/70 hover:text-destructive transition-colors"
