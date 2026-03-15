@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-// In production (same origin on Render), VITE_BACKEND_URL should be empty or unset.
-// In development, set VITE_BACKEND_URL=http://localhost:3001
+
+
 const SERVER_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 interface User {
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage for JWT user session
+    
     const storedUser = localStorage.getItem('watch_party_user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (_email: string) => {
-    // Not implemented in backend yet, keep as mock
+    
     return { error: null };
   };
 
