@@ -1,0 +1,11 @@
+{
+  "install": "cd server && npm install --include=dev && npx tsc",
+  "start": "cd server && npm start",
+  "watch": {
+    "restart": {
+      "include": [
+        "^server/"
+      ]
+    }
+  }
+}
