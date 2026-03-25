@@ -510,4 +510,18 @@ if (process.env.NODE_ENV === 'production') {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Backend Server listening on port ${PORT}`);
+
+  // Self-ping to keep Render free tier awake
+  if (process.env.RENDER_EXTERNAL_URL) {
+    const url = `${process.env.RENDER_EXTERNAL_URL}/api/ping`;
+    console.log(`[keep-alive] Self-ping script started for ${url}`);
+    setInterval(async () => {
+      try {
+        const res = await fetch(url);
+        console.log(`[keep-alive] Pinged ${url} - Status: ${res.status}`);
+      } catch (err: any) {
+        console.error(`[keep-alive] Ping failed:`, err.message);
+      }
+    }, 14 * 60 * 1000);
+  }
 });
