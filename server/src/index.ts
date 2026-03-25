@@ -488,14 +488,24 @@ io.on('connection', (socket: Socket) => {
   });
 });
 
+import path from 'path';
+
 // Health check endpoint
 app.get('/api/ping', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Pong' });
 });
 
-app.get('/', (req, res) => {
-  res.send('API is running...');
-});
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../../dist')));
+
+  app.get('{*path}', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../../', 'dist', 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send('API is running...');
+  });
+}
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
