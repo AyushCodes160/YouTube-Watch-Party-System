@@ -13,5 +13,4 @@ jobs:
       - name: Ping Render Deployment
         run: |
           echo "Pinging the API..."
-          # Using curl to hit the endpoint (replace your actual URL below if needed, though self-ping handles it)
-          curl -sSf "${{ secrets.RENDER_EXTERNAL_URL }}/api/ping" || echo "Ping failed, but continuing so workflow passes."
+          curl -sSf "https://youtube-watch-party-system-lbxa.onrender.com/api/ping" || echo "Ping failed, but continuing so workflow passes."
