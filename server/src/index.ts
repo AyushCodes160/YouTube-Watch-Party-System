@@ -488,39 +488,16 @@ io.on('connection', (socket: Socket) => {
   });
 });
 
-import path from 'path';
-
+// Health check endpoint
 app.get('/api/ping', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Pong' });
 });
 
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../dist')));
-
-  app.get('{*path}', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../../', 'dist', 'index.html'));
-  });
-} else {
-  app.get('/', (req, res) => {
-    res.send('API is running...');
-  });
-}
+app.get('/', (req, res) => {
+  res.send('API is running...');
+});
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Backend Server listening on port ${PORT}`);
-
-  // Self-ping to keep Render free tier awake
-  if (process.env.RENDER_EXTERNAL_URL) {
-    const url = `${process.env.RENDER_EXTERNAL_URL}/api/ping`;
-    console.log(`[keep-alive] Self-ping script started for ${url}`);
-    setInterval(async () => {
-      try {
-        const res = await fetch(url);
-        console.log(`[keep-alive] Pinged ${url} - Status: ${res.status}`);
-      } catch (err: any) {
-        console.error(`[keep-alive] Ping failed:`, err.message);
-      }
-    }, 14 * 60 * 1000);
-  }
 });
